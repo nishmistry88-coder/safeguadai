@@ -25,19 +25,21 @@ export const useAuth = () => {
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("safeguard_token"));
+  const [token, setToken] = useState(() => localStorage.getItem("safeguard_token"));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const verifyToken = async () => {
-      if (token) {
+      const storedToken = localStorage.getItem("safeguard_token");
+      if (storedToken) {
         try {
           const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${storedToken}` }
           });
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);
+            setToken(storedToken);
           } else {
             logout();
           }
