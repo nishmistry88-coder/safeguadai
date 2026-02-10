@@ -1,34 +1,75 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Additional app-specific styles */
+
+/* Fake call screen styles */
+.fake-call-screen {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Map placeholder styles */
+.map-placeholder {
+    background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Threat indicator colors */
+.threat-none { color: #10b981; }
+.threat-low { color: #84cc16; }
+.threat-medium { color: #f59e0b; }
+.threat-high { color: #f97316; }
+.threat-critical { color: #ef4444; }
+
+/* Navigation active state */
+.nav-active {
+    color: #8b5cf6;
+    position: relative;
 }
 
-.App-link {
-    color: #61dafb;
+.nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #8b5cf6;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Card hover effect */
+.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Audio wave animation */
+@keyframes audio-wave {
+    0%, 100% { height: 4px; }
+    50% { height: 20px; }
+}
+
+.audio-bar {
+    animation: audio-wave 0.5s ease-in-out infinite;
+}
+
+.audio-bar:nth-child(1) { animation-delay: 0s; }
+.audio-bar:nth-child(2) { animation-delay: 0.1s; }
+.audio-bar:nth-child(3) { animation-delay: 0.2s; }
+.audio-bar:nth-child(4) { animation-delay: 0.3s; }
+.audio-bar:nth-child(5) { animation-delay: 0.4s; }
+
+/* Incoming call animation */
+@keyframes incoming-ring {
+    0%, 100% { transform: rotate(-15deg); }
+    50% { transform: rotate(15deg); }
+}
+
+.incoming-ring {
+    animation: incoming-ring 0.3s ease-in-out infinite;
 }
