@@ -1,0 +1,148 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "Creative Designer (Anti-AI)",
+    "mission": "Create a 'Tactical Guardian' aesthetic—empowering, serious, and high-contrast for safety, but feminine and sleek, avoiding pink-washing.",
+    "principles": [
+      "Fusion: Tactical Gear x High-End Fashion Tech",
+      "Emotion: Trust, Alertness, Calm in Chaos",
+      "Function: Fitts's Law (Big Buttons), Thumb-Zone Navigation",
+      "Dark Mode First: Low light emission for discretion"
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Chivo, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "weights": {
+      "heading": "900",
+      "subheading": "700",
+      "body": "400"
+    },
+    "sizes": {
+      "h1": "text-5xl md:text-7xl tracking-tighter leading-none",
+      "h2": "text-3xl md:text-5xl tracking-tight",
+      "h3": "text-2xl md:text-3xl font-bold",
+      "body": "text-base md:text-lg leading-relaxed",
+      "small": "text-sm font-medium tracking-wide uppercase"
+    },
+    "instructions": "Import 'Chivo' from Google Fonts. Use it for all headings to give a 'Humanist Tech' feel. Use 'Inter' for UI elements for maximum legibility."
+  },
+  "colors": {
+    "palette": {
+      "background": "#09090b",
+      "surface": "#18181b",
+      "surface_highlight": "#27272a",
+      "primary": "#ef4444",
+      "primary_hover": "#dc2626",
+      "secondary": "#8b5cf6",
+      "secondary_hover": "#7c3aed",
+      "text_main": "#fafafa",
+      "text_muted": "#a1a1aa",
+      "border": "#27272a",
+      "success": "#10b981",
+      "warning": "#f59e0b"
+    },
+    "usage": {
+      "background": "bg-zinc-950",
+      "card": "bg-zinc-900 border border-zinc-800",
+      "primary_btn": "bg-red-500 hover:bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]",
+      "secondary_btn": "bg-violet-500 hover:bg-violet-600 text-white",
+      "text_heading": "text-zinc-50",
+      "text_body": "text-zinc-400"
+    },
+    "gradients": {
+      "hero_glow": "bg-gradient-to-b from-violet-500/20 via-transparent to-transparent",
+      "sos_pulse": "animate-pulse bg-red-500/50"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container_padding": "p-6 md:p-12",
+      "section_gap": "gap-12 md:gap-24",
+      "element_gap": "gap-4 md:gap-6"
+    },
+    "grid": {
+      "marketing": "grid grid-cols-1 md:grid-cols-12 gap-8",
+      "dashboard": "grid grid-cols-1 md:grid-cols-4 gap-4"
+    },
+    "containers": {
+      "card": "rounded-xl p-6 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors",
+      "glass": "backdrop-blur-xl bg-black/60 border border-white/10"
+    }
+  },
+  "components": {
+    "sos_button": {
+      "style": "rounded-full w-48 h-48 md:w-64 md:h-64 flex items-center justify-center bg-red-500 text-white font-black text-4xl shadow-[0_0_50px_rgba(239,68,68,0.6)] border-4 border-red-400/50 cursor-pointer active:scale-95 transition-transform",
+      "interaction": "Hold to activate (3s delay) to prevent false positives. Pulse animation on idle."
+    },
+    "nav_bar": {
+      "style": "fixed bottom-0 left-0 right-0 h-16 bg-zinc-950/90 backdrop-blur-lg border-t border-zinc-800 flex justify-around items-center z-50",
+      "item": "text-zinc-500 hover:text-violet-500 transition-colors flex flex-col items-center gap-1 text-xs"
+    },
+    "fake_call_screen": {
+      "style": "fullscreen bg-black z-[100] flex flex-col items-center justify-between py-20",
+      "notes": "Must mimic iOS/Android call screen exactly. Blur background image of a contact."
+    },
+    "map_view": {
+      "style": "w-full h-[60vh] rounded-2xl overflow-hidden border border-zinc-800 grayscale invert contrast-125",
+      "notes": "Use dark mode map tiles (CartoDB DarkMatter or Mapbox Dark)."
+    }
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "hero",
+        "url": "https://images.unsplash.com/photo-1730387432242-c707a42503f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHdhbGtpbmclMjBjaXR5JTIwbmlnaHQlMjBjb25maWRlbnR8ZW58MHx8fHwxNzcwNzQ3OTg1fDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Confident woman walking in city at night",
+        "usage": "Landing page hero background or split section"
+      },
+      {
+        "category": "feature",
+        "url": "https://images.unsplash.com/photo-1638817630687-d101124b657d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwxfHxob2xkaW5nJTIwc21hcnRwaG9uZSUyMGNsb3NlJTIwdXAlMjBuaWdodCUyMHN0cmVldHxlbnwwfHx8fDE3NzA3NDc5OTB8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Close up of smartphone in hand at night",
+        "usage": "Feature section showing app usage"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "preferred": ["ShieldAlert", "MapPin", "Phone", "Mic", "Users", "Bell", "Settings", "Lock"]
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-300 ease-out",
+    "hover": "hover:-translate-y-1 hover:shadow-lg",
+    "entrance": "animate-in fade-in slide-in-from-bottom-4 duration-700"
+  },
+  "accessibility": {
+    "contrast": "Ensure text is WCAG AA compliant. Use Zinc-400 on Zinc-950 for secondary text, White for primary.",
+    "touch_targets": "Minimum 44px for all interactive elements.",
+    "screen_readers": "All icons must have aria-label. SOS button must announce status clearly."
+  },
+  "instructions_to_main_agent": [
+    "1. Install 'lucide-react' and 'framer-motion' immediately.",
+    "2. Set up the Tailwind config to extend colors with the 'Zinc' and 'Red/Violet' palette defined above.",
+    "3. Create a 'Layout' component that enforces the dark theme (bg-zinc-950 text-zinc-50).",
+    "4. Build the 'SOS Button' as a standalone complex component with hold-to-trigger logic.",
+    "5. Use the provided images for the Landing Page. Do not use placeholders.",
+    "6. For the Map, use a placeholder div with class 'bg-zinc-900' if a library is not yet selected, but style it to look like a dark map.",
+    "7. Ensure the 'Fake Call' page hides the nav bar and looks like a native phone screen."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. Avoid this.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Create depth through layered design elements.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'.",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations.",
+    "NEVER use AI assistant Emoji characters for icons.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Prioritize using pre-existing components from src/components/ui when applicable.",
+    "Components MUST use named exports.",
+    "Use 'sonner' for toasts."
+  ]
+}
