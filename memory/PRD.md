@@ -25,6 +25,20 @@ Build an app that protects women when going out, protecting from potential threa
 
 ## What's Been Implemented
 
+### Version 2.1 (Feb 2026) - Journey Sharing
+
+#### Journey Sharing Feature
+- [x] Generate shareable tracking link
+- [x] Configurable expiration (1-24 hours)
+- [x] Public tracking page (no auth required)
+- [x] Live location updates (every 60 seconds)
+- [x] Battery level display
+- [x] User name and mode display
+- [x] Open in Google Maps link
+- [x] Auto-refresh on tracking page (30s)
+- [x] Copy link / Native share support
+- [x] Start/Stop sharing controls
+
 ### Version 2.0 (Feb 2026) - Major Feature Update
 
 #### Voice Activation Mode
@@ -61,13 +75,6 @@ Build an app that protects women when going out, protecting from potential threa
 - [x] Save last known status
 - [x] Trigger safety actions
 
-#### Comprehensive Settings
-- [x] Voice Activation settings (phrase editing, voice verify toggle)
-- [x] Check-in Timer settings (interval selection)
-- [x] Trigger settings (shake, auto-record, fake call)
-- [x] Battery settings (thresholds with sliders)
-- [x] Shutdown settings (alert toggle, location send)
-
 ### Version 1.0 (Jan 2026) - Initial Release
 - [x] User authentication (JWT)
 - [x] Emergency contacts CRUD
@@ -96,6 +103,13 @@ Build an app that protects women when going out, protecting from potential threa
 - POST /api/going-out/checkin
 - POST /api/going-out/missed-checkin
 
+### Journey Sharing (NEW)
+- POST /api/journey/start - Start sharing, get link
+- GET /api/journey/active - Get active share
+- POST /api/journey/end - Stop sharing
+- POST /api/journey/update-location - Update coordinates
+- GET /api/journey/track/{share_token} - PUBLIC: Track someone
+
 ### Voice Activation
 - POST /api/voice/detect-phrase
 
@@ -110,6 +124,22 @@ Build an app that protects women when going out, protecting from potential threa
 - CRUD /api/fake-call-contacts
 - POST /api/analyze-audio
 
+## Pages
+
+### Public
+- / - Landing page
+- /login - Login
+- /register - Registration
+- /track/:shareToken - Public journey tracking (NEW)
+
+### Protected
+- /dashboard - Main dashboard
+- /going-out - Going Out Mode setup/active
+- /sos - SOS emergency page
+- /fake-call - Fake call setup/trigger
+- /contacts - Emergency contacts (removed from nav)
+- /settings - All app settings
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
@@ -118,10 +148,10 @@ Build an app that protects women when going out, protecting from potential threa
 - [ ] Offline mode support
 
 ### P1 (High)
-- [ ] Journey sharing (share live location link)
 - [ ] Integration with emergency services API
 - [ ] Audio recording storage for evidence
 - [ ] Widget for quick SOS access
+- [ ] Map integration on tracking page
 
 ### P2 (Medium)
 - [ ] Safe zones with automatic alerts
@@ -139,3 +169,5 @@ Build an app that protects women when going out, protecting from potential threa
 - Location: Uses browser Geolocation API
 - Auth token stored in localStorage (7-day expiry)
 - Voice verification uses Whisper for phrase matching
+- Journey share tokens: URL-safe 8-byte random tokens
+- Journey location updates: Every 60 seconds when active
