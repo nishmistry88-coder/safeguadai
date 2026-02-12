@@ -83,6 +83,9 @@ export const Landing = () => {
             transition={{ duration: 0.8 }}
             className="max-w-2xl"
           >
+            <p className="text-violet-400 font-medium mb-4 tracking-wide">
+              Your Voice. Your Safety. Your Control.
+            </p>
             <h1 
               className="text-5xl md:text-7xl font-black text-zinc-50 tracking-tighter leading-none mb-6"
               style={{ fontFamily: 'Chivo, sans-serif' }}
