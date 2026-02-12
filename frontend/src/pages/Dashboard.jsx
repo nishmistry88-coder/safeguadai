@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldAlert, Mic, MicOff, MapPin, Bell, AlertTriangle, CheckCircle, ChevronRight } from "lucide-react";
+import { 
+  ShieldAlert, Mic, MicOff, MapPin, Bell, AlertTriangle, 
+  CheckCircle, ChevronRight, Battery, Zap, Shield
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -15,12 +18,36 @@ export const Dashboard = () => {
   const [lastAnalysis, setLastAnalysis] = useState(null);
   const [location, setLocation] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [isCharging, setIsCharging] = useState(false);
+  const [goingOutSession, setGoingOutSession] = useState(null);
+  const [settings, setSettings] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
   useEffect(() => {
     fetchContacts();
+    fetchSettings();
+    fetchGoingOutSession();
     getCurrentLocation();
+    getBatteryStatus();
+    
+    // Battery monitoring
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(battery => {
+        setBatteryLevel(Math.round(battery.level * 100));
+        setIsCharging(battery.charging);
+        
+        battery.addEventListener('levelchange', () => {
+          const level = Math.round(battery.level * 100);
+          setBatteryLevel(level);
+          checkBatteryWarnings(level);
+        });
+        battery.addEventListener('chargingchange', () => {
+          setIsCharging(battery.charging);
+        });
+      });
+    }
   }, []);
 
   const fetchContacts = async () => {
@@ -34,6 +61,34 @@ export const Dashboard = () => {
       }
     } catch (error) {
       console.error("Failed to fetch contacts:", error);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  };
+
+  const fetchGoingOutSession = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/active`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setGoingOutSession(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
     }
   };
 
@@ -53,7 +108,51 @@ export const Dashboard = () => {
     }
   };
 
+  const getBatteryStatus = async () => {
+    if ('getBattery' in navigator) {
+      try {
+        const battery = await navigator.getBattery();
+        setBatteryLevel(Math.round(battery.level * 100));
+        setIsCharging(battery.charging);
+      } catch (e) {
+        console.log("Battery API not available");
+      }
+    }
+  };
+
+  const checkBatteryWarnings = async (level) => {
+    if (!settings) return;
+    
+    if (level <= settings.critical_battery_threshold && settings.send_location_on_low_battery) {
+      toast.error("Critical battery! Sending final location...");
+      await sendBatteryUpdate(level);
+    } else if (level <= settings.low_battery_threshold && settings.low_battery_warning) {
+      toast.warning(`Low battery: ${level}%`);
+    }
+  };
+
+  const sendBatteryUpdate = async (level) => {
+    try {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/battery/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          level,
+          is_charging: isCharging,
+          latitude: location?.latitude,
+          longitude: location?.longitude
+        })
+      });
+    } catch (error) {
+      console.error("Battery update failed:", error);
+    }
+  };
+
   const startListening = async () => {
+    // Only listen if voice activation is enabled or user explicitly triggers it
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -72,7 +171,7 @@ export const Dashboard = () => {
       setIsListening(true);
       toast.success("Audio monitoring started");
 
-      // Auto-stop after 30 seconds and analyze
+      // Auto-stop after 30 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           stopListening();
@@ -150,6 +249,12 @@ export const Dashboard = () => {
     return colors[level] || colors.safe;
   };
 
+  const getBatteryColor = () => {
+    if (batteryLevel < 20) return "text-red-500";
+    if (batteryLevel < 50) return "text-amber-500";
+    return "text-emerald-500";
+  };
+
   return (
     <div className="p-6 space-y-6" data-testid="dashboard">
       {/* Header */}
@@ -163,13 +268,67 @@ export const Dashboard = () => {
           </h1>
           <p className="text-zinc-500 text-sm">Stay safe out there</p>
         </div>
-        <button 
-          className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400"
-          data-testid="notifications-btn"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Battery Indicator */}
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800`}>
+            {isCharging ? (
+              <Zap className={`w-4 h-4 ${getBatteryColor()}`} />
+            ) : (
+              <Battery className={`w-4 h-4 ${getBatteryColor()}`} />
+            )}
+            <span className={`text-xs font-medium ${getBatteryColor()}`}>{batteryLevel}%</span>
+          </div>
+          <button 
+            className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400"
+            data-testid="notifications-btn"
+          >
+            <Bell className="w-5 h-5" />
+          </button>
+        </div>
       </div>
+
+      {/* Going Out Mode Banner */}
+      {goingOutSession && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card 
+            className="border border-violet-500/30 bg-violet-500/10 cursor-pointer"
+            onClick={() => navigate("/going-out")}
+            data-testid="going-out-banner"
+          >
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center"
+                >
+                  <Shield className="w-5 h-5 text-violet-500" />
+                </motion.div>
+                <div>
+                  <p className="text-violet-400 font-bold">Going Out Mode Active</p>
+                  <p className="text-zinc-500 text-xs capitalize">{goingOutSession.preset} • Protected</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-violet-500" />
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Battery Warning */}
+      {batteryLevel < 20 && !isCharging && (
+        <Card className="border border-amber-500/30 bg-amber-500/10" data-testid="battery-warning">
+          <CardContent className="p-3 flex items-center gap-3">
+            <Battery className="w-5 h-5 text-amber-500" />
+            <p className="text-amber-400 text-sm">
+              Low battery ({batteryLevel}%). Consider charging soon.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Card */}
       <Card className={`border ${getThreatBg(threatStatus)} bg-zinc-900/50`} data-testid="status-card">
@@ -265,6 +424,26 @@ export const Dashboard = () => {
           </p>
         </motion.button>
       </div>
+
+      {/* Going Out Mode Quick Access */}
+      {!goingOutSession && (
+        <Card 
+          className="border border-zinc-800 bg-zinc-900 cursor-pointer hover:border-zinc-700 transition-colors"
+          onClick={() => navigate("/going-out")}
+          data-testid="start-going-out-card"
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-violet-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-zinc-50 font-bold">Going Out Mode</p>
+              <p className="text-zinc-500 text-xs">Extra protection for clubs, dates, travel</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-zinc-500" />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Location Card */}
       {location && (
