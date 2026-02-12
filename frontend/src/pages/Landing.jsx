@@ -220,7 +220,7 @@ export const Landing = () => {
             <span className="text-sm text-zinc-500">SafeGuard AI © 2024</span>
           </div>
           <p className="text-sm text-zinc-600">
-            Your safety is our priority
+            Your Voice. Your Safety. Your Control.
           </p>
         </div>
       </footer>
