@@ -10,6 +10,7 @@ import { SOSPage } from "@/pages/SOSPage";
 import { FakeCall } from "@/pages/FakeCall";
 import { Contacts } from "@/pages/Contacts";
 import { Settings } from "@/pages/Settings";
+import { GoingOutMode } from "@/pages/GoingOutMode";
 import { Layout } from "@/components/Layout";
 
 // Auth Context
