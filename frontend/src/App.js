@@ -129,6 +129,11 @@ function App() {
                 <Layout><Settings /></Layout>
               </ProtectedRoute>
             } />
+            <Route path="/going-out" element={
+              <ProtectedRoute>
+                <Layout><GoingOutMode /></Layout>
+              </ProtectedRoute>
+            } />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-center" richColors />
