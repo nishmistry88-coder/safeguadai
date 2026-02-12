@@ -545,8 +545,8 @@ export const Settings = () => {
 
       {/* App Info */}
       <div className="mt-8 text-center">
-        <p className="text-zinc-600 text-xs">SafeGuard v2.0.0</p>
-        <p className="text-zinc-700 text-xs mt-1">Your safety is our priority</p>
+        <p className="text-zinc-600 text-xs">SafeGuard AI v2.1.0</p>
+        <p className="text-zinc-700 text-xs mt-1">Your Voice. Your Safety. Your Control.</p>
       </div>
 
       {/* Edit Phrase Dialog */}
