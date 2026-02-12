@@ -144,6 +144,8 @@ class UserSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
+    # Location/Country
+    country_code: str = "US"  # ISO 3166-1 alpha-2 country code
     # Voice Activation
     voice_activation_enabled: bool = False
     activation_phrase: str = "Help me"
