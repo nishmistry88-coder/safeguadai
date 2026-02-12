@@ -57,10 +57,10 @@ export const Login = () => {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6 text-red-500" />
+        <div className="flex items-center gap-3">
+          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto" />
           <span className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
-            SafeGuard
+            SafeGuard AI
           </span>
         </div>
       </header>
