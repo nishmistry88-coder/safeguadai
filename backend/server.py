@@ -722,6 +722,115 @@ async def handle_shutdown_alert(current_user: dict = Depends(get_current_user)):
     
     return result
 
+# ==================== JOURNEY SHARING ====================
+
+@api_router.post("/journey/start", response_model=JourneyShare)
+async def start_journey_share(journey_data: JourneyShareCreate, current_user: dict = Depends(get_current_user)):
+    """Start sharing your journey - generates a shareable link"""
+    from datetime import timedelta
+    
+    # End any existing active journey
+    await db.journey_shares.update_many(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(hours=journey_data.duration_hours)).isoformat()
+    
+    journey = JourneyShare(
+        user_id=current_user["id"],
+        user_name=current_user["name"],
+        preset=journey_data.preset,
+        current_latitude=journey_data.latitude,
+        current_longitude=journey_data.longitude,
+        expires_at=expires_at
+    )
+    
+    await db.journey_shares.insert_one(journey.model_dump())
+    logger.info(f"Journey sharing started for user {current_user['name']} - Token: {journey.share_token}")
+    
+    return journey
+
+@api_router.get("/journey/active", response_model=Optional[JourneyShare])
+async def get_active_journey(current_user: dict = Depends(get_current_user)):
+    """Get user's active journey share"""
+    journey = await db.journey_shares.find_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"_id": 0}
+    )
+    if journey:
+        # Check if expired
+        if journey.get("expires_at"):
+            expires = datetime.fromisoformat(journey["expires_at"].replace('Z', '+00:00'))
+            if datetime.now(timezone.utc) > expires:
+                # Auto-expire
+                await db.journey_shares.update_one(
+                    {"id": journey["id"]},
+                    {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                return None
+        return JourneyShare(**journey)
+    return None
+
+@api_router.post("/journey/end")
+async def end_journey_share(current_user: dict = Depends(get_current_user)):
+    """Stop sharing your journey"""
+    result = await db.journey_shares.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {
+            "is_active": False,
+            "ended_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="No active journey share")
+    return {"message": "Journey sharing stopped"}
+
+@api_router.post("/journey/update-location")
+async def update_journey_location(location: JourneyLocationUpdate, current_user: dict = Depends(get_current_user)):
+    """Update location for active journey share"""
+    result = await db.journey_shares.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {
+            "current_latitude": location.latitude,
+            "current_longitude": location.longitude,
+            "battery_level": location.battery_level,
+            "last_updated": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="No active journey share")
+    return {"message": "Location updated"}
+
+@api_router.get("/journey/track/{share_token}", response_model=JourneySharePublic)
+async def track_journey(share_token: str):
+    """PUBLIC endpoint - Track someone's journey using share token (no auth required)"""
+    journey = await db.journey_shares.find_one(
+        {"share_token": share_token},
+        {"_id": 0}
+    )
+    
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+    
+    # Check if expired
+    if journey.get("expires_at"):
+        expires = datetime.fromisoformat(journey["expires_at"].replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > expires:
+            journey["is_active"] = False
+    
+    return JourneySharePublic(
+        user_name=journey["user_name"],
+        preset=journey.get("preset"),
+        current_latitude=journey.get("current_latitude"),
+        current_longitude=journey.get("current_longitude"),
+        battery_level=journey.get("battery_level"),
+        last_updated=journey.get("last_updated", journey["started_at"]),
+        started_at=journey["started_at"],
+        is_active=journey["is_active"]
+    )
+
 # ==================== EMERGENCY CONTACTS ====================
 
 @api_router.get("/contacts", response_model=List[EmergencyContact])
