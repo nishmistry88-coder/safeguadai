@@ -173,6 +173,7 @@ class UserSettings(BaseModel):
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class UserSettingsUpdate(BaseModel):
+    country_code: Optional[str] = None
     voice_activation_enabled: Optional[bool] = None
     activation_phrase: Optional[str] = None
     going_out_presets: Optional[Dict[str, bool]] = None
