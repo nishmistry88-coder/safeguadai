@@ -190,7 +190,7 @@ export const Landing = () => {
             className="p-12 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800"
           >
             <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-6">
-              <img src={LOGO_URL} alt="SafeGuard AI" className="h-16 w-auto" />
+              <img src={LOGO_URL} alt="SafeGuard AI" className="h-16 w-auto logo-transparent" />
             </div>
             <h2 
               className="text-3xl md:text-4xl font-black text-zinc-50 tracking-tight mb-4"
