@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ShieldAlert, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/App";
+
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_safeguard-app-66/artifacts/kzx2mwxf_project%20logo.png";
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -62,10 +64,10 @@ export const Register = () => {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6 text-red-500" />
+        <div className="flex items-center gap-3">
+          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto" />
           <span className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
-            SafeGuard
+            SafeGuard AI
           </span>
         </div>
       </header>
