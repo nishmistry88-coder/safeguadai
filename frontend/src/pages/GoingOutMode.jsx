@@ -53,13 +53,18 @@ export const GoingOutMode = () => {
   const [location, setLocation] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [journeyShare, setJourneyShare] = useState(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareDuration, setShareDuration] = useState("4");
   
   const checkinTimerRef = useRef(null);
   const countdownRef = useRef(null);
   const mediaRecorderRef = useRef(null);
+  const locationUpdateRef = useRef(null);
 
   useEffect(() => {
     fetchActiveSession();
+    fetchActiveJourney();
     getBatteryLevel();
     getCurrentLocation();
     
