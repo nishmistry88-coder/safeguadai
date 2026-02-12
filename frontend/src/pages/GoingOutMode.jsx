@@ -157,6 +157,102 @@ export const GoingOutMode = () => {
     }
   };
 
+  // ==================== JOURNEY SHARING ====================
+
+  const startJourneyShare = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          preset: activeSession?.preset || selectedPreset,
+          duration_hours: parseInt(shareDuration),
+          latitude: location?.latitude,
+          longitude: location?.longitude
+        })
+      });
+      
+      if (response.ok) {
+        const journey = await response.json();
+        setJourneyShare(journey);
+        setShowShareDialog(false);
+        toast.success("Journey sharing started!");
+      } else {
+        toast.error("Failed to start sharing");
+      }
+    } catch (error) {
+      toast.error("Connection error");
+    }
+  };
+
+  const stopJourneyShare = async () => {
+    try {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/end`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setJourneyShare(null);
+      toast.success("Journey sharing stopped");
+    } catch (error) {
+      toast.error("Failed to stop sharing");
+    }
+  };
+
+  const updateJourneyLocation = async () => {
+    if (!location) {
+      getCurrentLocation();
+      return;
+    }
+    
+    try {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/update-location`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          battery_level: batteryLevel
+        })
+      });
+    } catch (error) {
+      console.error("Failed to update journey location:", error);
+    }
+  };
+
+  const getShareLink = () => {
+    if (!journeyShare) return "";
+    return `${window.location.origin}/track/${journeyShare.share_token}`;
+  };
+
+  const copyShareLink = () => {
+    const link = getShareLink();
+    navigator.clipboard.writeText(link);
+    toast.success("Link copied to clipboard!");
+  };
+
+  const shareViaNavigator = async () => {
+    const link = getShareLink();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Track My Journey - SafeGuard",
+          text: "I'm sharing my live location with you for safety. Click to track:",
+          url: link
+        });
+      } catch (e) {
+        copyShareLink();
+      }
+    } else {
+      copyShareLink();
+    }
+  };
+
   const startCheckinTimer = () => {
     if (checkinTimerRef.current) clearInterval(checkinTimerRef.current);
     
