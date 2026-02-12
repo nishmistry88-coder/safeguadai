@@ -49,10 +49,10 @@ export const Landing = () => {
 
         {/* Header */}
         <header className="relative z-10 flex items-center justify-between p-6">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-8 h-8 text-red-500" />
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="SafeGuard AI" className="h-10 w-auto" />
             <span className="text-xl font-black text-zinc-50 tracking-tight" style={{ fontFamily: 'Chivo, sans-serif' }}>
-              SafeGuard
+              SafeGuard AI
             </span>
           </div>
           {user ? (
