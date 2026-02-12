@@ -228,6 +228,51 @@ class BatteryStatus(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
+# ==================== JOURNEY SHARING MODELS ====================
+
+def generate_share_token():
+    """Generate a short, URL-safe token for sharing"""
+    import secrets
+    return secrets.token_urlsafe(8)
+
+class JourneyShare(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    share_token: str = Field(default_factory=generate_share_token)
+    is_active: bool = True
+    preset: Optional[str] = None
+    current_latitude: Optional[float] = None
+    current_longitude: Optional[float] = None
+    battery_level: Optional[int] = None
+    last_updated: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    ended_at: Optional[str] = None
+    expires_at: Optional[str] = None  # Auto-expire after X hours
+
+class JourneyShareCreate(BaseModel):
+    preset: Optional[str] = None
+    duration_hours: int = 4  # Default 4 hour expiry
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class JourneyLocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+    battery_level: Optional[int] = None
+
+class JourneySharePublic(BaseModel):
+    """Public view of journey - no sensitive data"""
+    user_name: str
+    preset: Optional[str] = None
+    current_latitude: Optional[float] = None
+    current_longitude: Optional[float] = None
+    battery_level: Optional[int] = None
+    last_updated: str
+    started_at: str
+    is_active: bool
+
 # ==================== AUTH HELPERS ====================
 
 def hash_password(password: str) -> str:
