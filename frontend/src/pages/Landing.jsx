@@ -189,8 +189,8 @@ export const Landing = () => {
             transition={{ duration: 0.6 }}
             className="p-12 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800"
           >
-            <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
-              <ShieldAlert className="w-10 h-10 text-red-500" />
+            <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-6">
+              <img src={LOGO_URL} alt="SafeGuard AI" className="h-16 w-auto" />
             </div>
             <h2 
               className="text-3xl md:text-4xl font-black text-zinc-50 tracking-tight mb-4"
@@ -199,7 +199,7 @@ export const Landing = () => {
               Start Feeling Safe Today
             </h2>
             <p className="text-zinc-400 text-lg mb-8 max-w-lg mx-auto">
-              Join thousands of women who trust SafeGuard to keep them protected wherever they go.
+              Join thousands of women who trust SafeGuard AI to keep them protected wherever they go.
             </p>
             <Button 
               onClick={() => navigate(user ? "/dashboard" : "/register")}
@@ -215,9 +215,9 @@ export const Landing = () => {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-zinc-800">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-500" />
-            <span className="text-sm text-zinc-500">SafeGuard © 2024</span>
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="SafeGuard AI" className="h-6 w-auto" />
+            <span className="text-sm text-zinc-500">SafeGuard AI © 2024</span>
           </div>
           <p className="text-sm text-zinc-600">
             Your safety is our priority
