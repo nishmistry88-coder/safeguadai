@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { ShieldAlert, MapPin, Phone, Users, Settings } from "lucide-react";
+import { ShieldAlert, MapPin, Phone, Users, Settings, Shield } from "lucide-react";
 
 export const Layout = ({ children }) => {
   const navItems = [
     { path: "/dashboard", icon: MapPin, label: "Home" },
+    { path: "/going-out", icon: Shield, label: "Going Out" },
     { path: "/sos", icon: ShieldAlert, label: "SOS" },
     { path: "/fake-call", icon: Phone, label: "Call" },
-    { path: "/contacts", icon: Users, label: "Contacts" },
     { path: "/settings", icon: Settings, label: "Settings" },
   ];
 
