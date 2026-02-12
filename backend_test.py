@@ -316,8 +316,13 @@ class SafeGuardAPITester:
         
         if success:
             print(f"   Default settings loaded: {len(settings_response)} fields")
+            # Check if country_code is present in default settings
+            if 'country_code' in settings_response:
+                print(f"   Default country_code: {settings_response['country_code']}")
+            else:
+                self.log_test("Country Code in Default Settings", False, "country_code field missing")
 
-        # Test update settings
+        # Test update settings with country code
         settings_update = {
             "voice_activation_enabled": True,
             "activation_phrase": "Emergency help",
@@ -325,7 +330,8 @@ class SafeGuardAPITester:
             "shake_detection_enabled": True,
             "low_battery_threshold": 15,
             "critical_battery_threshold": 3,
-            "shutdown_alert_enabled": True
+            "shutdown_alert_enabled": True,
+            "country_code": "GB"  # Test updating to UK
         }
         
         success, update_response = self.run_test(
@@ -338,9 +344,40 @@ class SafeGuardAPITester:
         
         if success:
             print(f"   Settings updated successfully")
+            # Verify country_code was updated
+            if 'country_code' in update_response:
+                if update_response['country_code'] == "GB":
+                    self.log_test("Country Code Update", True, "Successfully updated to GB")
+                else:
+                    self.log_test("Country Code Update", False, f"Expected GB, got {update_response['country_code']}")
+            else:
+                self.log_test("Country Code Update", False, "country_code not returned in response")
 
-        # Test get settings again to verify update
-        self.run_test("Get Updated Settings", "GET", "settings", 200)
+        # Test get settings again to verify update persisted
+        success, final_settings = self.run_test("Get Updated Settings", "GET", "settings", 200)
+        
+        if success and 'country_code' in final_settings:
+            if final_settings['country_code'] == "GB":
+                self.log_test("Country Code Persistence", True, "Country code persisted correctly")
+            else:
+                self.log_test("Country Code Persistence", False, f"Expected GB, got {final_settings['country_code']}")
+
+        # Test updating to different countries
+        test_countries = ["US", "AU", "DE", "FR", "CA"]
+        for country in test_countries:
+            success, country_response = self.run_test(
+                f"Update Country to {country}",
+                "PUT",
+                "settings",
+                200,
+                data={"country_code": country}
+            )
+            
+            if success and 'country_code' in country_response:
+                if country_response['country_code'] == country:
+                    print(f"   ✅ Successfully updated to {country}")
+                else:
+                    print(f"   ❌ Failed to update to {country}")
 
         return True
 
