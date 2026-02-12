@@ -507,6 +507,86 @@ export const GoingOutMode = () => {
           </CardContent>
         </Card>
 
+        {/* Journey Sharing */}
+        <Card className={`border ${journeyShare?.is_active ? 'border-cyan-500/30 bg-cyan-500/10' : 'border-zinc-800 bg-zinc-900'}`}>
+          <CardContent className="p-4">
+            {journeyShare?.is_active ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <Share2 className="w-5 h-5 text-cyan-500" />
+                    </div>
+                    <div>
+                      <p className="text-cyan-400 font-bold">Sharing Location</p>
+                      <p className="text-zinc-500 text-xs">Contacts can track you</p>
+                    </div>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                </div>
+                
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    value={getShareLink()}
+                    readOnly
+                    className="bg-zinc-800 border-zinc-700 text-zinc-300 text-xs"
+                    data-testid="share-link-input"
+                  />
+                  <Button
+                    onClick={copyShareLink}
+                    size="icon"
+                    variant="outline"
+                    className="border-zinc-700 shrink-0"
+                    data-testid="copy-link-btn"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    onClick={shareViaNavigator}
+                    className="flex-1 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                    data-testid="share-btn"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Share Link
+                  </Button>
+                  <Button
+                    onClick={stopJourneyShare}
+                    variant="outline"
+                    className="border-zinc-700 text-zinc-400"
+                    data-testid="stop-share-btn"
+                  >
+                    Stop
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                    <Link2 className="w-5 h-5 text-zinc-500" />
+                  </div>
+                  <div>
+                    <p className="text-zinc-50 font-medium">Journey Sharing</p>
+                    <p className="text-zinc-500 text-xs">Share live location with contacts</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowShareDialog(true)}
+                  size="sm"
+                  className="bg-cyan-500 hover:bg-cyan-600"
+                  data-testid="start-share-btn"
+                >
+                  <Share2 className="w-4 h-4 mr-1" />
+                  Share
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* End Session Button */}
         <Button
           onClick={requestEndSession}
