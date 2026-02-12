@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Mic, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Mic, Phone, MapPin, ArrowRight, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/App";
