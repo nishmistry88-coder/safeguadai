@@ -103,6 +103,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/track/:shareToken" element={<TrackJourney />} />
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={
