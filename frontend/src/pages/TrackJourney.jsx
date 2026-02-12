@@ -112,7 +112,7 @@ export const TrackJourney = () => {
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto" />
+          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto logo-transparent" />
           <span className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
             SafeGuard AI
           </span>
