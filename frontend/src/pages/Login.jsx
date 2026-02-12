@@ -58,7 +58,7 @@ export const Login = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto" />
+          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto logo-transparent" />
           <span className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
             SafeGuard AI
           </span>
