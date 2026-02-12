@@ -303,6 +303,274 @@ class SafeGuardAPITester:
 
         return True
 
+    def test_settings_api(self):
+        """Test user settings functionality"""
+        print("\n=== SETTINGS API TESTS ===")
+        
+        if not self.token:
+            print("❌ No auth token available for settings tests")
+            return False
+
+        # Test get settings (should create default if not exists)
+        success, settings_response = self.run_test("Get User Settings", "GET", "settings", 200)
+        
+        if success:
+            print(f"   Default settings loaded: {len(settings_response)} fields")
+
+        # Test update settings
+        settings_update = {
+            "voice_activation_enabled": True,
+            "activation_phrase": "Emergency help",
+            "checkin_interval": 20,
+            "shake_detection_enabled": True,
+            "low_battery_threshold": 15,
+            "critical_battery_threshold": 3,
+            "shutdown_alert_enabled": True
+        }
+        
+        success, update_response = self.run_test(
+            "Update User Settings",
+            "PUT",
+            "settings",
+            200,
+            data=settings_update
+        )
+        
+        if success:
+            print(f"   Settings updated successfully")
+
+        # Test get settings again to verify update
+        self.run_test("Get Updated Settings", "GET", "settings", 200)
+
+        return True
+
+    def test_going_out_mode(self):
+        """Test Going Out Mode functionality"""
+        print("\n=== GOING OUT MODE TESTS ===")
+        
+        if not self.token:
+            print("❌ No auth token available for going out mode tests")
+            return False
+
+        # Test get active session (should be none initially)
+        self.run_test("Get Active Session (Empty)", "GET", "going-out/active", 200)
+
+        # Test start going out session
+        session_data = {
+            "preset": "club",
+            "voice_activation_enabled": True,
+            "shake_detection_enabled": True,
+            "auto_record_enabled": False,
+            "checkin_enabled": True,
+            "checkin_interval": 30
+        }
+        
+        success, session_response = self.run_test(
+            "Start Going Out Session",
+            "POST",
+            "going-out/start",
+            200,
+            data=session_data
+        )
+        
+        session_id = None
+        if success and 'id' in session_response:
+            session_id = session_response['id']
+            print(f"   Session ID: {session_id}")
+
+        # Test get active session (should return the created session)
+        success, active_response = self.run_test("Get Active Session", "GET", "going-out/active", 200)
+        
+        if success and active_response:
+            print(f"   Active session preset: {active_response.get('preset', 'N/A')}")
+
+        # Test check-in response (safe)
+        checkin_data = {
+            "is_safe": True,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        self.run_test(
+            "Check-in Response (Safe)",
+            "POST",
+            "going-out/checkin",
+            200,
+            data=checkin_data
+        )
+
+        # Test check-in response (not safe - should trigger SOS)
+        checkin_unsafe_data = {
+            "is_safe": False,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        self.run_test(
+            "Check-in Response (Not Safe)",
+            "POST",
+            "going-out/checkin",
+            200,
+            data=checkin_unsafe_data
+        )
+
+        # Test missed check-in (should trigger SOS)
+        self.run_test(
+            "Missed Check-in Handler",
+            "POST",
+            "going-out/missed-checkin",
+            200
+        )
+
+        # Test end session
+        self.run_test(
+            "End Going Out Session",
+            "POST",
+            "going-out/end",
+            200
+        )
+
+        # Verify session is ended
+        self.run_test("Get Active Session (After End)", "GET", "going-out/active", 200)
+
+        return True
+
+    def test_voice_activation(self):
+        """Test voice activation functionality"""
+        print("\n=== VOICE ACTIVATION TESTS ===")
+        
+        if not self.token:
+            print("❌ No auth token available for voice activation tests")
+            return False
+
+        # Create a small test audio file (webm format)
+        try:
+            # Create a minimal webm file for testing
+            test_audio_content = b'\x1a\x45\xdf\xa3\x9f\x42\x86\x81\x01\x42\xf7\x81\x01\x42\xf2\x81\x04\x42\xf3\x81\x08\x42\x82\x84webm\x42\x87\x81\x02\x42\x85\x81\x02'
+            
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_file:
+                tmp_file.write(test_audio_content)
+                tmp_file_path = tmp_file.name
+
+            # Test voice phrase detection
+            with open(tmp_file_path, 'rb') as audio_file:
+                files = {'audio': ('test.webm', audio_file, 'audio/webm')}
+                
+                success, detection_response = self.run_test(
+                    "Voice Phrase Detection",
+                    "POST",
+                    "voice/detect-phrase",
+                    200,
+                    files=files
+                )
+                
+                if success:
+                    print(f"   Phrase detected: {detection_response.get('phrase_detected', 'N/A')}")
+                    print(f"   SOS triggered: {detection_response.get('sos_triggered', False)}")
+
+            # Test voice verification for ending session
+            with open(tmp_file_path, 'rb') as audio_file:
+                files = {'audio': ('verification.webm', audio_file, 'audio/webm')}
+                
+                success, verify_response = self.run_test(
+                    "Voice Verification",
+                    "POST",
+                    "going-out/verify-voice",
+                    200,
+                    files=files
+                )
+                
+                if success:
+                    print(f"   Verification match: {verify_response.get('is_match', False)}")
+
+            # Clean up temp file
+            os.unlink(tmp_file_path)
+            
+        except Exception as e:
+            self.log_test("Voice Activation Tests", False, f"File creation error: {str(e)}")
+
+        return True
+
+    def test_battery_and_shutdown(self):
+        """Test battery and shutdown detection functionality"""
+        print("\n=== BATTERY & SHUTDOWN TESTS ===")
+        
+        if not self.token:
+            print("❌ No auth token available for battery tests")
+            return False
+
+        # Test battery update (normal level)
+        battery_data = {
+            "level": 75,
+            "is_charging": False,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        success, battery_response = self.run_test(
+            "Battery Update (Normal)",
+            "POST",
+            "battery/update",
+            200,
+            data=battery_data
+        )
+        
+        if success:
+            print(f"   Battery level: {battery_response.get('level', 'N/A')}%")
+            print(f"   Warning: {battery_response.get('warning', 'None')}")
+
+        # Test battery update (low level)
+        low_battery_data = {
+            "level": 15,
+            "is_charging": False,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        success, low_battery_response = self.run_test(
+            "Battery Update (Low)",
+            "POST",
+            "battery/update",
+            200,
+            data=low_battery_data
+        )
+        
+        if success:
+            print(f"   Low battery warning: {low_battery_response.get('warning', 'None')}")
+
+        # Test battery update (critical level)
+        critical_battery_data = {
+            "level": 3,
+            "is_charging": False,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        success, critical_battery_response = self.run_test(
+            "Battery Update (Critical)",
+            "POST",
+            "battery/update",
+            200,
+            data=critical_battery_data
+        )
+        
+        if success:
+            print(f"   Critical battery action: {critical_battery_response.get('action_taken', 'None')}")
+
+        # Test shutdown alert
+        success, shutdown_response = self.run_test(
+            "Shutdown Alert",
+            "POST",
+            "shutdown/alert",
+            200
+        )
+        
+        if success:
+            print(f"   Shutdown detected: {shutdown_response.get('shutdown_detected', False)}")
+            print(f"   Actions taken: {shutdown_response.get('actions_taken', [])}")
+
+        return True
+
     def test_audio_analysis(self):
         """Test audio analysis functionality"""
         print("\n=== AUDIO ANALYSIS TESTS ===")
