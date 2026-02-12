@@ -111,10 +111,10 @@ export const TrackJourney = () => {
     <div className="min-h-screen bg-zinc-950 p-6" data-testid="track-journey-page">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Shield className="w-6 h-6 text-violet-500" />
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <img src={LOGO_URL} alt="SafeGuard AI" className="h-8 w-auto" />
           <span className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
-            SafeGuard
+            SafeGuard AI
           </span>
         </div>
         <h1 className="text-2xl font-black text-zinc-50 tracking-tight" style={{ fontFamily: 'Chivo, sans-serif' }}>
