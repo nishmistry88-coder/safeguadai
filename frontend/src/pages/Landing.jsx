@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { ShieldAlert, Mic, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Mic, Phone, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/App";
+
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_safeguard-app-66/artifacts/kzx2mwxf_project%20logo.png";
 
 export const Landing = () => {
   const navigate = useNavigate();
