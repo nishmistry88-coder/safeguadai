@@ -23,66 +23,119 @@ Build an app that protects women when going out, protecting from potential threa
 - Location tracking/history
 - Dark mode UI for discretion
 
-## What's Been Implemented (Jan 2026)
+## What's Been Implemented
 
-### Backend APIs
-- [x] User authentication (register, login, JWT verification)
+### Version 2.0 (Feb 2026) - Major Feature Update
+
+#### Voice Activation Mode
+- [x] Custom activation phrase (default: "Help me")
+- [x] Phrase detection triggers SOS workflow
+- [x] Manual enable/disable by user
+- [x] Voice verification required to disable Going Out Mode
+
+#### Going Out Mode
+- [x] 5 Presets: Club, Festival, Date, Walking Home, Travel
+- [x] Check-in timer (10-60 minute intervals)
+- [x] Shake detection toggle
+- [x] Auto-record on trigger toggle
+- [x] Trigger fake call on missed check-in
+- [x] No recording until trigger occurs
+
+#### Automatic Triggers (Missed Check-in)
+- [x] "Are you safe?" notification
+- [x] Countdown timer (60 seconds)
+- [x] Auto-trigger SOS if no response
+- [x] Send location to emergency contacts
+- [x] Start recording (if enabled)
+- [x] Trigger fake call (optional)
+
+#### Battery Tracking
+- [x] Display battery percentage in dashboard
+- [x] Low battery warning (configurable threshold, default 20%)
+- [x] Critical battery alert (configurable, default 5%)
+- [x] Send final location on critical battery
+
+#### Shutdown Detection
+- [x] Detect shutdown during Going Out Mode
+- [x] Send final location update
+- [x] Save last known status
+- [x] Trigger safety actions
+
+#### Comprehensive Settings
+- [x] Voice Activation settings (phrase editing, voice verify toggle)
+- [x] Check-in Timer settings (interval selection)
+- [x] Trigger settings (shake, auto-record, fake call)
+- [x] Battery settings (thresholds with sliders)
+- [x] Shutdown settings (alert toggle, location send)
+
+### Version 1.0 (Jan 2026) - Initial Release
+- [x] User authentication (JWT)
 - [x] Emergency contacts CRUD
-- [x] SOS alerts creation and management
+- [x] SOS alerts with location
+- [x] Fake call feature
+- [x] AI threat detection (Whisper + GPT-5.2)
 - [x] Location tracking
-- [x] Fake call contacts management
-- [x] Audio analysis endpoint (Whisper + GPT-5.2 threat detection)
+- [x] Dark mode UI
 
-### Frontend Pages
-- [x] Landing page with hero section and features
-- [x] Login/Register with form validation
-- [x] Dashboard with status card, quick actions, contacts preview
-- [x] SOS page with hold-to-activate button (3-second hold)
-- [x] Fake call with incoming/active call screens
-- [x] Emergency contacts management
-- [x] Settings with preferences
+## API Endpoints
 
-### Design Implementation
-- [x] Dark mode first (Zinc 950 background)
-- [x] Chivo + Inter fonts
-- [x] Red (danger) + Violet (secondary) color scheme
-- [x] Glass-morphism effects
-- [x] Responsive mobile-first design
-- [x] Bottom navigation for thumb-zone access
+### Auth
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/auth/me
+
+### User Settings
+- GET /api/settings
+- PUT /api/settings
+
+### Going Out Mode
+- POST /api/going-out/start
+- GET /api/going-out/active
+- POST /api/going-out/end
+- POST /api/going-out/verify-voice
+- POST /api/going-out/checkin
+- POST /api/going-out/missed-checkin
+
+### Voice Activation
+- POST /api/voice/detect-phrase
+
+### Battery & Shutdown
+- POST /api/battery/update
+- POST /api/shutdown/alert
+
+### Existing
+- CRUD /api/contacts
+- POST /api/sos, GET /api/sos/history
+- POST /api/location, GET /api/location/history
+- CRUD /api/fake-call-contacts
+- POST /api/analyze-audio
 
 ## Prioritized Backlog
 
 ### P0 (Critical)
 - [ ] SMS/Push notifications to emergency contacts on SOS
-- [ ] Continuous background audio monitoring mode
+- [ ] Background service for continuous check-ins
 - [ ] Offline mode support
 
 ### P1 (High)
-- [ ] Journey sharing (share live location with contacts)
-- [ ] Timer-based check-ins
+- [ ] Journey sharing (share live location link)
 - [ ] Integration with emergency services API
 - [ ] Audio recording storage for evidence
-
-### P2 (Medium)
-- [ ] Friend location sharing
-- [ ] Safe zones (home, work) with automatic alerts
-- [ ] Community safety alerts
 - [ ] Widget for quick SOS access
 
-### P3 (Nice to have)
-- [ ] Voice-activated SOS ("Help me")
-- [ ] Wearable integration (smartwatch)
+### P2 (Medium)
+- [ ] Safe zones with automatic alerts
+- [ ] Community safety alerts
 - [ ] Multiple language UI
-- [ ] Analytics dashboard for users
 
-## Next Tasks
-1. Add SMS notifications via Twilio for SOS alerts
-2. Implement background audio monitoring service
-3. Add timer-based safety check-ins
-4. Journey sharing with live location updates
+### P3 (Nice to have)
+- [ ] Wearable integration (smartwatch)
+- [ ] Analytics dashboard
 
 ## Technical Notes
 - Emergent LLM Key: Used for Whisper + GPT-5.2
 - Audio format: webm supported for browser recording
+- Battery API: Uses navigator.getBattery() where available
 - Location: Uses browser Geolocation API
 - Auth token stored in localStorage (7-day expiry)
+- Voice verification uses Whisper for phrase matching
