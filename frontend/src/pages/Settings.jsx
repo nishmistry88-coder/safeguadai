@@ -205,6 +205,72 @@ export const Settings = () => {
         </CardContent>
       </Card>
 
+      {/* Country & Emergency Number */}
+      <div className="mb-6">
+        <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-3 px-1">
+          Location & Emergency
+        </h2>
+        <Card className="border border-zinc-800 bg-zinc-900">
+          <CardContent className="p-0 divide-y divide-zinc-800">
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-zinc-50 font-medium">Country</p>
+                  <p className="text-zinc-500 text-xs">Sets your emergency number</p>
+                </div>
+              </div>
+              <Select
+                value={settings.country_code}
+                onValueChange={(value) => updateSetting("country_code", value)}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-50" data-testid="country-select">
+                  <SelectValue>
+                    {settings.country_code && (
+                      <span className="flex items-center gap-2">
+                        <span>{getEmergencyNumber(settings.country_code).flag}</span>
+                        <span>{getEmergencyNumber(settings.country_code).name}</span>
+                      </span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
+                  {countries.map((country) => (
+                    <SelectItem key={country.code} value={country.code} className="text-zinc-50">
+                      <span className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        <span>{country.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-red-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-zinc-50 font-medium">Emergency Number</p>
+                  <p className="text-zinc-500 text-xs">
+                    Police: {getEmergencyNumber(settings.country_code).police} • 
+                    Ambulance: {getEmergencyNumber(settings.country_code).ambulance} • 
+                    Fire: {getEmergencyNumber(settings.country_code).fire}
+                  </p>
+                </div>
+                <span className="text-2xl font-bold text-red-500" style={{ fontFamily: 'Chivo, sans-serif' }}>
+                  {getEmergencyNumber(settings.country_code).universal}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Voice Activation Settings */}
       <div className="mb-6">
         <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-3 px-1">
