@@ -6,6 +6,12 @@ import { useAuth } from "@/App";
 
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_safeguard-app-66/artifacts/kzx2mwxf_project%20logo.png";
 
+// CSS class for transparent logo background
+const logoStyle = {
+  filter: 'drop-shadow(0 0 0 transparent)',
+  mixBlendMode: 'screen'
+};
+
 export const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
