@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/App";
 import { motion, AnimatePresence } from "framer-motion";
+import { getEmergencyNumber } from "@/utils/emergencyNumbers";
 
 export const SOSPage = () => {
   const { token, user } = useAuth();
@@ -11,12 +12,30 @@ export const SOSPage = () => {
   const [holdProgress, setHoldProgress] = useState(0);
   const [isAlertActive, setIsAlertActive] = useState(false);
   const [location, setLocation] = useState(null);
+  const [emergencyInfo, setEmergencyInfo] = useState(getEmergencyNumber("US"));
   const holdTimerRef = useRef(null);
   const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     getCurrentLocation();
+    fetchUserSettings();
   }, []);
+
+  const fetchUserSettings = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const settings = await response.json();
+        if (settings.country_code) {
+          setEmergencyInfo(getEmergencyNumber(settings.country_code));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  };
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -134,12 +153,12 @@ export const SOSPage = () => {
             
             <div className="space-y-4">
               <a
-                href="tel:911"
+                href={`tel:${emergencyInfo.universal}`}
                 className="flex items-center gap-3 px-6 py-4 bg-zinc-900 border border-zinc-700 rounded-xl text-zinc-50"
-                data-testid="call-911-btn"
+                data-testid="call-emergency-btn"
               >
                 <Phone className="w-5 h-5 text-red-500" />
-                Call Emergency Services (911)
+                Call Emergency Services ({emergencyInfo.universal})
               </a>
               
               <Button
@@ -238,9 +257,9 @@ export const SOSPage = () => {
       {/* Info Cards */}
       <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-3">
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <p className="text-xs text-zinc-500 mb-1">Emergency</p>
+          <p className="text-xs text-zinc-500 mb-1">Emergency ({emergencyInfo.flag})</p>
           <p className="text-lg font-bold text-zinc-50" style={{ fontFamily: 'Chivo, sans-serif' }}>
-            911
+            {emergencyInfo.universal}
           </p>
         </div>
         <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
