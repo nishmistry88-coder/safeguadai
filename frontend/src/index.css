@@ -53,6 +53,16 @@ code {
     }
 }
 
+/* Logo with transparent background */
+.logo-transparent {
+    mix-blend-mode: lighten;
+}
+
+/* Dark background override for logo */
+.logo-container {
+    background: transparent;
+}
+
 /* Custom animations */
 @keyframes pulse-ring {
     0% {
