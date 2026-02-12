@@ -611,6 +611,114 @@ class SafeGuardAPITester:
 
         return True
 
+    def test_journey_sharing(self):
+        """Test Journey Sharing functionality"""
+        print("\n=== JOURNEY SHARING TESTS ===")
+        
+        if not self.token:
+            print("❌ No auth token available for journey sharing tests")
+            return False
+
+        # Test get active journey (should be none initially)
+        self.run_test("Get Active Journey (Empty)", "GET", "journey/active", 200)
+
+        # Test start journey sharing
+        journey_data = {
+            "preset": "club",
+            "duration_hours": 4,
+            "latitude": 37.7749,
+            "longitude": -122.4194
+        }
+        
+        success, journey_response = self.run_test(
+            "Start Journey Share",
+            "POST",
+            "journey/start",
+            200,
+            data=journey_data
+        )
+        
+        share_token = None
+        if success and 'share_token' in journey_response:
+            share_token = journey_response['share_token']
+            print(f"   Share Token: {share_token}")
+
+        # Test get active journey (should return the created journey)
+        success, active_response = self.run_test("Get Active Journey", "GET", "journey/active", 200)
+        
+        if success and active_response:
+            print(f"   Active journey preset: {active_response.get('preset', 'N/A')}")
+            print(f"   Journey is active: {active_response.get('is_active', False)}")
+
+        # Test update journey location
+        location_update = {
+            "latitude": 37.7849,
+            "longitude": -122.4094,
+            "battery_level": 85
+        }
+        
+        self.run_test(
+            "Update Journey Location",
+            "POST",
+            "journey/update-location",
+            200,
+            data=location_update
+        )
+
+        # Test public tracking endpoint (no auth required)
+        if share_token:
+            # Temporarily remove token for public endpoint test
+            temp_token = self.token
+            self.token = None
+            
+            success, track_response = self.run_test(
+                "Track Journey (Public)",
+                "GET",
+                f"journey/track/{share_token}",
+                200
+            )
+            
+            if success:
+                print(f"   Public tracking user: {track_response.get('user_name', 'N/A')}")
+                print(f"   Public tracking active: {track_response.get('is_active', False)}")
+                print(f"   Public tracking location: {track_response.get('current_latitude', 'N/A')}, {track_response.get('current_longitude', 'N/A')}")
+            
+            # Restore token
+            self.token = temp_token
+
+        # Test end journey sharing
+        self.run_test(
+            "End Journey Share",
+            "POST",
+            "journey/end",
+            200
+        )
+
+        # Verify journey is ended
+        success, ended_response = self.run_test("Get Active Journey (After End)", "GET", "journey/active", 200)
+        
+        if success and not ended_response:
+            print("   ✅ Journey correctly ended (no active journey)")
+
+        # Test public tracking after journey ended
+        if share_token:
+            temp_token = self.token
+            self.token = None
+            
+            success, ended_track_response = self.run_test(
+                "Track Ended Journey (Public)",
+                "GET",
+                f"journey/track/{share_token}",
+                200
+            )
+            
+            if success:
+                print(f"   Ended journey active status: {ended_track_response.get('is_active', 'N/A')}")
+            
+            self.token = temp_token
+
+        return True
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting SafeGuard API Tests")
@@ -624,6 +732,11 @@ class SafeGuardAPITester:
             self.test_sos_functionality()
             self.test_location_tracking()
             self.test_fake_call_contacts()
+            self.test_settings_api()
+            self.test_going_out_mode()
+            self.test_journey_sharing()  # NEW: Journey Sharing tests
+            self.test_voice_activation()
+            self.test_battery_and_shutdown()
             self.test_audio_analysis()
         else:
             print("❌ Authentication failed - skipping protected endpoint tests")
