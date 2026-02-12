@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   MapPin, Clock, Mic, Smartphone, Play, Square, 
   PartyPopper, Music, Heart, Moon, Plane, 
-  AlertTriangle, Battery, CheckCircle, X, Shield
+  AlertTriangle, Battery, CheckCircle, X, Shield,
+  Share2, Copy, ExternalLink, Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/App";
 import { motion, AnimatePresence } from "framer-motion";
