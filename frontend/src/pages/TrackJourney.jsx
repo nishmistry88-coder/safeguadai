@@ -238,7 +238,8 @@ export const TrackJourney = () => {
 
       {/* Footer */}
       <div className="text-center mt-8">
-        <p className="text-zinc-600 text-xs">Protected by SafeGuard</p>
+        <p className="text-zinc-600 text-xs">Protected by SafeGuard AI</p>
+        <p className="text-zinc-700 text-xs mt-1">Your Voice. Your Safety. Your Control.</p>
       </div>
     </div>
   );
