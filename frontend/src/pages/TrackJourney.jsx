@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { MapPin, Battery, Clock, Shield, User, AlertTriangle } from "lucide-react";
+import { MapPin, Battery, Clock, User, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_safeguard-app-66/artifacts/kzx2mwxf_project%20logo.png";
 
 export const TrackJourney = () => {
   const { shareToken } = useParams();
