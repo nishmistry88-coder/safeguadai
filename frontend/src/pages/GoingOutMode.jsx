@@ -80,6 +80,7 @@ export const GoingOutMode = () => {
     return () => {
       if (checkinTimerRef.current) clearInterval(checkinTimerRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
+      if (locationUpdateRef.current) clearInterval(locationUpdateRef.current);
     };
   }, []);
 
@@ -92,6 +93,17 @@ export const GoingOutMode = () => {
     };
   }, [activeSession]);
 
+  // Update journey location periodically
+  useEffect(() => {
+    if (journeyShare && journeyShare.is_active) {
+      updateJourneyLocation();
+      locationUpdateRef.current = setInterval(updateJourneyLocation, 60000); // Every minute
+    }
+    return () => {
+      if (locationUpdateRef.current) clearInterval(locationUpdateRef.current);
+    };
+  }, [journeyShare]);
+
   const fetchActiveSession = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/active`, {
@@ -103,6 +115,20 @@ export const GoingOutMode = () => {
       }
     } catch (error) {
       console.error("Failed to fetch session:", error);
+    }
+  };
+
+  const fetchActiveJourney = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/active`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setJourneyShare(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch journey:", error);
     }
   };
 
