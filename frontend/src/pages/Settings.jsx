@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   User, Bell, Shield, LogOut, ChevronRight, Moon, MapPin, Mic, 
-  Battery, Power, Smartphone, Clock, Volume2, Edit2, Check, X
+  Battery, Power, Smartphone, Clock, Volume2, Edit2, Check, X, Globe, Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { useAuth } from "@/App";
+import { getCountryList, getEmergencyNumber } from "@/utils/emergencyNumbers";
 
 export const Settings = () => {
   const navigate = useNavigate();
@@ -23,8 +24,11 @@ export const Settings = () => {
   const [showPhraseDialog, setShowPhraseDialog] = useState(false);
   const [isRecordingPhrase, setIsRecordingPhrase] = useState(false);
   const [tempPhrase, setTempPhrase] = useState("");
+  const countries = getCountryList();
   
   const [settings, setSettings] = useState({
+    // Country/Location
+    country_code: "US",
     // Voice Activation
     voice_activation_enabled: false,
     activation_phrase: "Help me",
