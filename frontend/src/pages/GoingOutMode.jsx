@@ -690,6 +690,50 @@ export const GoingOutMode = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Share Journey Dialog */}
+        <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-zinc-50">Share Your Journey</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-zinc-400 mb-6">
+                Share a tracking link with trusted contacts so they can see your live location.
+              </p>
+              
+              <div className="mb-6">
+                <Label className="text-zinc-300">Link expires in</Label>
+                <Select value={shareDuration} onValueChange={setShareDuration}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-50 mt-2" data-testid="duration-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    <SelectItem value="1" className="text-zinc-50">1 hour</SelectItem>
+                    <SelectItem value="2" className="text-zinc-50">2 hours</SelectItem>
+                    <SelectItem value="4" className="text-zinc-50">4 hours</SelectItem>
+                    <SelectItem value="8" className="text-zinc-50">8 hours</SelectItem>
+                    <SelectItem value="12" className="text-zinc-50">12 hours</SelectItem>
+                    <SelectItem value="24" className="text-zinc-50">24 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button
+                onClick={startJourneyShare}
+                className="w-full bg-cyan-500 hover:bg-cyan-600"
+                data-testid="confirm-share-btn"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Start Sharing
+              </Button>
+              
+              <p className="text-center text-zinc-600 text-xs mt-4">
+                Your location updates every minute while sharing is active
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
