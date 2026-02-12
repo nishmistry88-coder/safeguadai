@@ -216,7 +216,7 @@ export const Landing = () => {
       <footer className="py-8 px-6 border-t border-zinc-800">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="SafeGuard AI" className="h-6 w-auto" />
+            <img src={LOGO_URL} alt="SafeGuard AI" className="h-6 w-auto logo-transparent" />
             <span className="text-sm text-zinc-500">SafeGuard AI © 2024</span>
           </div>
           <p className="text-sm text-zinc-600">
