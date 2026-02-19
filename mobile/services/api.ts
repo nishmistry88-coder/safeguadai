@@ -1,5 +1,5 @@
 // API Service for SafeGuard AI
-const API_BASE_URL = 'https://safeguard-app-66.preview.emergentagent.com/api';
+const API_BASE_URL = 'https://sos-mobile-1.preview.emergentagent.com/api';
 
 class ApiService {
   private token: string | null = null;
