@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
 
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_f5939225-27b2-488c-ba98-856ce900c22c/artifacts/u4rcyto1_real%20logo.png";
-const CITY_BG = "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1200&q=80";
+const CITY_BG = "https://customer-assets.emergentagent.com/job_f5939225-27b2-488c-ba98-856ce900c22c/artifacts/eocca7j2_real%20logo.png";
 
 const features = [
   {
