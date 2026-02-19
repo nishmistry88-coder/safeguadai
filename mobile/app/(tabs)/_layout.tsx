@@ -102,6 +102,14 @@ export default function TabsLayout() {
           ),
         }}
       />
+      {/* Hidden screens accessible via navigation */}
+      <Tabs.Screen
+        name="contacts"
+        options={{
+          href: null, // Hide from tab bar
+          title: 'Contacts',
+        }}
+      />
     </Tabs>
   );
 }
