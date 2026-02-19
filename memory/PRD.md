@@ -1,173 +1,164 @@
-# SafeGuard - Women's Safety App PRD
+# SafeGuard AI - Product Requirements Document
 
-## Original Problem Statement
-Build an app that protects women when going out, protecting from potential threats. The AI should be able to hear and understand multiple languages to detect threats.
+## Overview
+SafeGuard AI is a women's safety application that provides AI-powered personal protection features. The app supports multiple platforms (Android, iOS, Web) through a React Native + Expo mobile app and a React web application, both backed by a FastAPI + MongoDB server.
+
+## Brand Identity
+- **Name:** SafeGuard AI
+- **Slogan:** "Your Voice. Your Safety. Your Control."
+- **Logo:** Shield-based icon with AI integration
 
 ## Architecture
-- **Frontend**: React 19 + Tailwind CSS + Shadcn UI + Framer Motion
-- **Backend**: FastAPI + MongoDB (Motor async driver)
-- **AI**: OpenAI Whisper (speech-to-text) + GPT-5.2 (threat analysis)
-- **Auth**: JWT-based authentication
 
-## User Personas
-1. **Primary**: Women who travel alone, commute at night, or work late
-2. **Secondary**: Parents who want to ensure their daughters' safety
-3. **Tertiary**: Anyone who feels unsafe in certain situations
+### Tech Stack
+- **Backend:** FastAPI (Python) + MongoDB
+- **Web Frontend:** React + Tailwind CSS + Shadcn UI
+- **Mobile Frontend:** React Native + Expo + NativeWind
+- **AI Services:** OpenAI Whisper (STT) + GPT-5.2 (Threat Analysis) via Emergent LLM Key
 
-## Core Requirements (Static)
-- Emergency SOS button with location sharing
-- AI-powered threat detection via audio monitoring
-- Multi-language support for threat detection
-- Fake call feature to escape uncomfortable situations
-- Emergency contacts management
-- Location tracking/history
-- Dark mode UI for discretion
+### Repository Structure
+```
+/app/
+├── backend/         # FastAPI server (Port 8001)
+│   └── server.py    # Main API routes
+├── frontend/        # React web app (Port 3000)
+│   └── src/pages/   # Web screens
+└── mobile/          # Expo (React Native) app
+    ├── app/         # Expo Router screens
+    │   ├── (auth)/  # Auth flow (landing, login, register)
+    │   ├── (tabs)/  # Main screens (dashboard, sos, going-out, fake-call, settings, contacts)
+    │   └── track/   # Public journey tracking
+    └── services/    # API and native services
+```
 
-## What's Been Implemented
+## Core Features
 
-### Version 2.1 (Feb 2026) - Journey Sharing
+### 1. Authentication
+- JWT-based authentication
+- Secure token storage (expo-secure-store)
+- User registration and login
 
-#### Journey Sharing Feature
-- [x] Generate shareable tracking link
-- [x] Configurable expiration (1-24 hours)
-- [x] Public tracking page (no auth required)
-- [x] Live location updates (every 60 seconds)
-- [x] Battery level display
-- [x] User name and mode display
-- [x] Open in Google Maps link
-- [x] Auto-refresh on tracking page (30s)
-- [x] Copy link / Native share support
-- [x] Start/Stop sharing controls
+### 2. SOS Emergency Alert
+- Hold-to-activate SOS button (3 seconds)
+- Location sharing with emergency contacts
+- Universal emergency number display by country
+- Haptic feedback and vibration
 
-### Version 2.0 (Feb 2026) - Major Feature Update
+### 3. Going Out Mode
+- Preset-based protection (Club, Festival, Date, Walking Home, Travel)
+- Check-in timer with customizable intervals
+- Shake detection for SOS trigger
+- Voice activation mode
+- Auto-record on trigger
+- Journey sharing with tracking link
 
-#### Voice Activation Mode
-- [x] Custom activation phrase (default: "Help me")
-- [x] Phrase detection triggers SOS workflow
-- [x] Manual enable/disable by user
-- [x] Voice verification required to disable Going Out Mode
+### 4. Fake Call
+- Customizable caller contacts
+- Realistic incoming call UI
+- Active call timer display
+- Vibration pattern
 
-#### Going Out Mode
-- [x] 5 Presets: Club, Festival, Date, Walking Home, Travel
-- [x] Check-in timer (10-60 minute intervals)
-- [x] Shake detection toggle
-- [x] Auto-record on trigger toggle
-- [x] Trigger fake call on missed check-in
-- [x] No recording until trigger occurs
+### 5. Emergency Contacts
+- Add/edit/delete contacts
+- Relationship categorization
+- Primary contact designation
+- SOS notification recipients
 
-#### Automatic Triggers (Missed Check-in)
-- [x] "Are you safe?" notification
-- [x] Countdown timer (60 seconds)
-- [x] Auto-trigger SOS if no response
-- [x] Send location to emergency contacts
-- [x] Start recording (if enabled)
-- [x] Trigger fake call (optional)
+### 6. Journey Sharing
+- Shareable tracking links
+- Real-time location updates
+- Battery level reporting
+- Time-limited sharing (1-24 hours)
 
-#### Battery Tracking
-- [x] Display battery percentage in dashboard
-- [x] Low battery warning (configurable threshold, default 20%)
-- [x] Critical battery alert (configurable, default 5%)
-- [x] Send final location on critical battery
-
-#### Shutdown Detection
-- [x] Detect shutdown during Going Out Mode
-- [x] Send final location update
-- [x] Save last known status
-- [x] Trigger safety actions
-
-### Version 1.0 (Jan 2026) - Initial Release
-- [x] User authentication (JWT)
-- [x] Emergency contacts CRUD
-- [x] SOS alerts with location
-- [x] Fake call feature
-- [x] AI threat detection (Whisper + GPT-5.2)
-- [x] Location tracking
-- [x] Dark mode UI
+### 7. Settings
+- Country selection (50+ countries)
+- Emergency number configuration
+- Voice activation phrase customization
+- Battery and shutdown alerts
+- Notification preferences
 
 ## API Endpoints
 
-### Auth
-- POST /api/auth/register
-- POST /api/auth/login
-- GET /api/auth/me
+### Authentication
+- `POST /api/auth/register` - Create account
+- `POST /api/auth/login` - Sign in
+- `GET /api/auth/me` - Get current user
 
-### User Settings
-- GET /api/settings
-- PUT /api/settings
+### Contacts
+- `GET /api/contacts` - List contacts
+- `POST /api/contacts` - Add contact
+- `PUT /api/contacts/{id}` - Update contact
+- `DELETE /api/contacts/{id}` - Remove contact
+
+### SOS
+- `POST /api/sos` - Trigger alert
+- `GET /api/sos/history` - Get alerts
+- `PUT /api/sos/{id}/resolve` - Mark resolved
 
 ### Going Out Mode
-- POST /api/going-out/start
-- GET /api/going-out/active
-- POST /api/going-out/end
-- POST /api/going-out/verify-voice
-- POST /api/going-out/checkin
-- POST /api/going-out/missed-checkin
+- `POST /api/going-out/start` - Start session
+- `GET /api/going-out/active` - Get session
+- `POST /api/going-out/end` - End session
+- `POST /api/going-out/checkin` - Check-in response
 
-### Journey Sharing (NEW)
-- POST /api/journey/start - Start sharing, get link
-- GET /api/journey/active - Get active share
-- POST /api/journey/end - Stop sharing
-- POST /api/journey/update-location - Update coordinates
-- GET /api/journey/track/{share_token} - PUBLIC: Track someone
+### Journey Sharing
+- `POST /api/journey/start` - Start sharing
+- `GET /api/journey/active` - Get journey
+- `POST /api/journey/end` - Stop sharing
+- `GET /api/journey/track/{token}` - Public tracking
 
-### Voice Activation
-- POST /api/voice/detect-phrase
+### Settings
+- `GET /api/settings` - Get settings
+- `PUT /api/settings` - Update settings
 
-### Battery & Shutdown
-- POST /api/battery/update
-- POST /api/shutdown/alert
+### Fake Call
+- `GET /api/fake-call-contacts` - List callers
+- `POST /api/fake-call-contacts` - Add caller
+- `DELETE /api/fake-call-contacts/{id}` - Remove caller
 
-### Existing
-- CRUD /api/contacts
-- POST /api/sos, GET /api/sos/history
-- POST /api/location, GET /api/location/history
-- CRUD /api/fake-call-contacts
-- POST /api/analyze-audio
+## Database Schema
 
-## Pages
+- **users**: id, email, name, hashed_password, created_at
+- **contacts**: id, user_id, name, phone, relationship, is_primary
+- **settings**: user_id, country_code, voice_activation_enabled, activation_phrase, etc.
+- **sessions**: id, user_id, preset, is_active, check_in_interval, settings...
+- **journeys**: id, user_id, share_token, is_active, started_at, expires_at
+- **locations**: id, user_id, journey_id, latitude, longitude, timestamp, battery_level
+- **alerts**: id, user_id, trigger_source, location, created_at, resolved
 
-### Public
-- / - Landing page
-- /login - Login
-- /register - Registration
-- /track/:shareToken - Public journey tracking (NEW)
+---
 
-### Protected
-- /dashboard - Main dashboard
-- /going-out - Going Out Mode setup/active
-- /sos - SOS emergency page
-- /fake-call - Fake call setup/trigger
-- /contacts - Emergency contacts (removed from nav)
-- /settings - All app settings
+## Implementation Status (Feb 19, 2026)
 
-## Prioritized Backlog
+### Completed ✅
+- [x] Backend API (all endpoints tested - 100% pass rate)
+- [x] Web frontend (React) - Fully functional
+- [x] Mobile app scaffolding (Expo + NativeWind)
+- [x] Auth screens (landing, login, register)
+- [x] Dashboard screen
+- [x] SOS screen with hold-to-activate
+- [x] Going Out Mode screen with presets
+- [x] Fake Call screen with contacts
+- [x] Settings screen with country selection
+- [x] Contacts management screen
+- [x] Journey tracking public page
+- [x] Native services (location, shake, notifications)
 
-### P0 (Critical)
-- [ ] SMS/Push notifications to emergency contacts on SOS
-- [ ] Background service for continuous check-ins
-- [ ] Offline mode support
+### In Progress 🔄
+- [ ] Mobile app end-to-end testing
+- [ ] Native feature integration testing
 
-### P1 (High)
-- [ ] Integration with emergency services API
-- [ ] Audio recording storage for evidence
-- [ ] Widget for quick SOS access
-- [ ] Map integration on tracking page
+### Future/Backlog 📋
+- [ ] Offline mode for core safety features
+- [ ] Build artifacts (APK, iOS TestFlight)
+- [ ] Real map integration (Mapbox/Google Maps)
+- [ ] Geofencing for "safe zone" alerts
+- [ ] Country-specific women's helpline database
+- [ ] Push notification server integration
+- [ ] Audio threat detection integration
 
-### P2 (Medium)
-- [ ] Safe zones with automatic alerts
-- [ ] Community safety alerts
-- [ ] Multiple language UI
+---
 
-### P3 (Nice to have)
-- [ ] Wearable integration (smartwatch)
-- [ ] Analytics dashboard
-
-## Technical Notes
-- Emergent LLM Key: Used for Whisper + GPT-5.2
-- Audio format: webm supported for browser recording
-- Battery API: Uses navigator.getBattery() where available
-- Location: Uses browser Geolocation API
-- Auth token stored in localStorage (7-day expiry)
-- Voice verification uses Whisper for phrase matching
-- Journey share tokens: URL-safe 8-byte random tokens
-- Journey location updates: Every 60 seconds when active
+## Test Results
+- **Backend:** 35/35 tests passed (100%)
+- **Test Report:** `/app/test_reports/iteration_5.json`
