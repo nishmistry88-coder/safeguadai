@@ -40,11 +40,11 @@ export const Landing = () => {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1730387432242-c707a42503f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHdhbGtpbmclMjBjaXR5JTIwbmlnaHQlMjBjb25maWRlbnR8ZW58MHx8fHwxNzcwNzQ3OTg1fDA&ixlib=rb-4.1.0&q=85"
-            alt="Woman walking confidently at night"
-            className="w-full h-full object-cover opacity-40"
+            src="https://customer-assets.emergentagent.com/job_f5939225-27b2-488c-ba98-856ce900c22c/artifacts/eocca7j2_real%20logo.png"
+            alt="London city skyline at night"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/60 to-zinc-950"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-violet-950/40 via-zinc-950/50 to-zinc-950/95"></div>
         </div>
 
         {/* Header */}
