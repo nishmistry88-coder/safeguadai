@@ -145,11 +145,21 @@ SafeGuard AI is a women's safety application that provides AI-powered personal p
 - [x] Native services (location, shake, notifications)
 
 ### Design System Applied
-- **Background**: City skyline at night with purple gradient overlay
+- **Background**: London skyline (Tower Bridge) at night with purple lighting
 - **Primary CTA**: Coral/red (#f43f5e) with glow shadows
 - **Accent**: Violet/purple (#8b5cf6)
-- **Typography**: Bold italic for headlines
-- **Cards**: Glassmorphic with border transparency
+- **Typography**: Bold italic for headlines, weight 900
+- **Cards**: Glassmorphic with `bg-zinc-900/70` and `border-zinc-700/50`
+- **Gradient Overlay**: `from-violet-950/70 via-zinc-950/92 to-zinc-950/98`
+
+### All Screens Updated with London Skyline ✅
+- Landing, Login, Register (auth flow)
+- Dashboard
+- SOS
+- Going Out Mode
+- Fake Call
+- Settings
+- Contacts
 
 ### In Progress 🔄
 - [ ] Mobile app end-to-end testing on device/emulator
