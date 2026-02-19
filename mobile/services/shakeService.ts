@@ -47,7 +47,7 @@ class ShakeService {
     }
   }
 
-  private async triggerShake(): void {
+  private async triggerShake(): Promise<void> {
     // Provide haptic feedback
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     
