@@ -1,0 +1,38 @@
+{
+  "add_contact": {
+    "phrases": ["add contact", "new contact", "create contact", "emergency number"],
+    "action": "navigate:AddContact"
+  },
+  "emergency_contacts": {
+    "phrases": ["emergency contacts", "my contacts", "safety contacts"],
+    "action": "navigate:EmergencyContacts"
+  },
+  "alert_timer": {
+    "phrases": ["alert timer", "change timer", "set timer", "countdown"],
+    "action": "navigate:AlertTimer"
+  },
+  "alert_mode": {
+    "phrases": ["start alert", "go to alert", "alert mode", "panic"],
+    "action": "navigate:AlertScreen"
+  },
+  "fake_call": {
+    "phrases": ["fake call", "incoming call", "call simulation"],
+    "action": "navigate:FakeCallContacts"
+  },
+  "status_update": {
+    "phrases": ["check in", "update status", "i'm okay"],
+    "action": "trigger:StatusCheckIn"
+  },
+  "settings": {
+    "phrases": ["settings", "preferences", "options"],
+    "action": "navigate:Settings"
+  },
+  "voice_activation": {
+    "phrases": ["voice activation", "voice mode", "voice trigger"],
+    "action": "navigate:VoiceActivation"
+  },
+  "battery": {
+    "phrases": ["battery", "battery level", "battery check"],
+    "action": "trigger:BatteryCheck"
+  }
+}

@@ -1,5 +1,5 @@
 // API Service for SafeGuard AI
-const API_BASE_URL = 'https://sos-mobile-1.preview.emergentagent.com/api';
+const API_BASE_URL = "http://10.0.2.2:8000";
 
 class ApiService {
   private token: string | null = null;
@@ -62,22 +62,32 @@ class ApiService {
     });
   }
 
-  // Contacts
-  async getContacts() {
-    return this.request<any[]>('/contacts');
-  }
+ // Contacts
+async getContacts() {
+  return this.request<any[]>('/contacts');
+}
 
-  async createContact(contact: { name: string; phone: string; relationship: string; is_primary: boolean }) {
-    return this.request<any>('/contacts', {
-      method: 'POST',
-      body: JSON.stringify(contact),
-    });
-  }
+async createContact(contact: { name: string; phone: string; relationship: string; is_primary: boolean }) {
+  return this.request<any>('/contacts', {
+    method: 'POST',
+    body: JSON.stringify(contact),
+  });
+}
 
-  async deleteContact(id: string) {
-    return this.request<any>(`/contacts/${id}`, { method: 'DELETE' });
-  }
+async updateContact(id: string, contact: { name: string; phone: string; relationship: string; is_primary: boolean }) {
+  return this.request<any>(`/contacts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(contact),
+  });
+}
 
+async deleteContact(id: string) {
+  return this.request<any>(`/contacts/${id}`, { method: 'DELETE' });
+}
+
+async getContactById(id: string) {
+  return this.request<any>(`/contacts/${id}`);
+}
   // SOS
   async triggerSOS(latitude: number, longitude: number, message?: string, trigger_source: string = 'manual') {
     return this.request<any>('/sos', {
