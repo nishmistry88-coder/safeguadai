@@ -138,8 +138,6 @@ class UserResponse(BaseModel):
     created_at: str
 
 
-
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -396,3 +394,76 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ==================== AUTH ROUTES ====================
+
+@app.post("/auth/signup", response_model=TokenResponse)
+async def signup(user: UserCreate):
+    # Check if user already exists
+    existing = await db.users.find_one({"email": user.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user_id = str(uuid.uuid4())
+    hashed_pw = hash_password(user.password)
+    now = datetime.now(timezone.utc).isoformat()
+
+    user_doc = {
+        "id": user_id,
+        "email": user.email,
+        "password": hashed_pw,
+        "name": user.name,
+        "created_at": now,
+    }
+
+    await db.users.insert_one(user_doc)
+
+    # Create default settings for this user
+    settings = UserSettings(user_id=user_id)
+    await db.settings.insert_one(settings.model_dump())
+
+    token = create_token(user_id)
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user_id,
+            email=user.email,
+            name=user.name,
+            created_at=now,
+        ),
+    )
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+async def login(payload: UserLogin):
+    user = await db.users.find_one({"email": payload.email})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not verify_password(payload.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user_id = user["id"]
+    token = create_token(user_id)
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            name=user.get("name", ""),
+            created_at=user.get("created_at", ""),
+        ),
+    )
+
+
+@app.get("/auth/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return UserResponse(
+        id=current_user["id"],
+        email=current_user["email"],
+        name=current_user.get("name", ""),
+        created_at=current_user.get("created_at", ""),
+    )
