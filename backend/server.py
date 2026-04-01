@@ -57,15 +57,16 @@ def get_twilio_client() -> Optional[Client]:
 
 # ==================== FASTAPI APP ====================
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="SafeGuard API")
 
-# CORS (development mode)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # allow all origins (frontend)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # allow all HTTP methods
+    allow_headers=["*"],  # allow all headers
 )
 
 # ==================== ASSISTANT ENDPOINT ====================
