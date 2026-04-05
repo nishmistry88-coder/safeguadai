@@ -1,7 +1,29 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# ==================== FASTAPI APP  ====================
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Depends
+
+app = FastAPI(title="SafeGuard API")
+
+# CORS MUST be here — before ANY other imports
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://safeguadai-frontend.onrender.com"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.options("/{path:path}")
+async def preflight_handler(path: str):
+    return {}
+
+
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from twilio.rest import Client
@@ -18,6 +40,7 @@ import tempfile
 import aiofiles
 import json
 import time
+
 
 # ==================== ENV + ROOT DIR ====================
 
@@ -56,26 +79,6 @@ def get_twilio_client() -> Optional[Client]:
         return None
     return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
-# ==================== FASTAPI APP ====================
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI(title="SafeGuard API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://safeguadai-frontend.onrender.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.options("/{path:path}")
-async def preflight_handler(path: str):
-    return {}
 
 # ==================== ASSISTANT ENDPOINT ====================
 
