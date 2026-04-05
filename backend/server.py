@@ -73,6 +73,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.options("/{path:path}")
+async def preflight_handler(path: str):
+    return {}
+
 # ==================== ASSISTANT ENDPOINT ====================
 
 from openai import OpenAI
