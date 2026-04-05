@@ -397,7 +397,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # ==================== AUTH ROUTES ====================
 
-@app.post("/auth/signup", response_model=TokenResponse, dependencies=[Depends(None)])
+@app.post("/auth/signup", response_model=TokenResponse)
 async def signup(user: UserCreate):
     # Check if user already exists
     existing = await db.users.find_one({"email": user.email})
@@ -435,7 +435,7 @@ async def signup(user: UserCreate):
     )
 
 
-@app.post("/auth/login", response_model=TokenResponse, dependencies=[Depends(None)])
+@app.post("/auth/login", response_model=TokenResponse)
 async def login(payload: UserLogin):
 
     user = await db.users.find_one({"email": payload.email})
