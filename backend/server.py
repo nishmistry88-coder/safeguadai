@@ -41,7 +41,7 @@ db = client[db_name]
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "safeguard_secret_key")
 JWT_ALGORITHM = "HS256"
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # ==================== TWILIO CONFIG ====================
 
@@ -61,13 +61,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="SafeGuard API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://safeguadai-frontend.onrender.com"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 # ==================== ASSISTANT ENDPOINT ====================
 
@@ -382,6 +376,10 @@ def create_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    # NEW: allow CORS to run before rejecting
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Missing token")
+
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("user_id")
@@ -395,7 +393,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
 
 # ==================== AUTH ROUTES ====================
 
