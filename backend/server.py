@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from twilio.rest import Client
@@ -396,7 +397,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # ==================== AUTH ROUTES ====================
 
-@app.post("/auth/signup", response_model=TokenResponse)
+@app.post("/auth/signup", response_model=TokenResponse, dependencies=[Depends(None)])
 async def signup(user: UserCreate):
     # Check if user already exists
     existing = await db.users.find_one({"email": user.email})
@@ -434,8 +435,9 @@ async def signup(user: UserCreate):
     )
 
 
-@app.post("/auth/login", response_model=TokenResponse)
+@app.post("/auth/login", response_model=TokenResponse, dependencies=[Depends(None)])
 async def login(payload: UserLogin):
+
     user = await db.users.find_one({"email": payload.email})
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
