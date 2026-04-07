@@ -5,15 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="SafeGuard API")
 
-@app.middleware("http")
-async def force_cors(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
-
 
 # CORS MUST be here — before ANY other imports
 app.add_middleware(
@@ -26,11 +17,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.options("/{path:path}")
-async def preflight_handler(path: str):
-    return {}
-
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
