@@ -18,14 +18,17 @@ export const Login = () => {
     email: "",
     password: ""
   });
+console.log("ENV TEST:", process.env.REACT_APP_TEST);
+console.log("BACKEND URL:", process.env.REACT_APP_BACKEND_URL);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/auth/login`, {
         method: "POST",
+         mode: "cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
