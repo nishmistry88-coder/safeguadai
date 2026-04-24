@@ -590,6 +590,46 @@ async def update_location(location: LocationCreate, current_user: dict = Depends
     await db.locations.insert_one(new_location.model_dump())
     return new_location
 
+# ==================== LIVE GPS TRACKING ====================
+
+class LocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+    accuracy: float | None = None
+    speed: float | None = None
+    heading: float | None = None
+    timestamp: datetime | None = None
+
+@app.post("/location/update")
+async def update_live_location(data: LocationUpdate, current_user: dict = Depends(get_current_user)):
+    location_data = {
+        "user_id": current_user["id"],
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "accuracy": data.accuracy,
+        "speed": data.speed,
+        "heading": data.heading,
+        "timestamp": data.timestamp or datetime.utcnow()
+    }
+
+    await db.locations.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": location_data},
+        upsert=True
+    )
+
+    return {"status": "success", "message": "Live location updated"}
+
+@app.get("/location/latest")
+async def get_latest_location(current_user: dict = Depends(get_current_user)):
+    location = await db.locations.find_one({"user_id": current_user["id"]})
+
+    if not location:
+        raise HTTPException(status_code=404, detail="No location found")
+
+    location["_id"] = str(location["_id"])
+    return location
+
 # ==================== BATTERY ROUTES ====================
 
 @app.post("/battery/update")
