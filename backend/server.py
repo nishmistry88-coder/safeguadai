@@ -479,3 +479,343 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         name=current_user.get("name", ""),
         created_at=current_user.get("created_at", ""),
     )
+
+# ==================== CONTACTS ROUTES ====================
+
+@app.get("/contacts")
+async def get_contacts(current_user: dict = Depends(get_current_user)):
+    contacts = await db.contacts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100)
+    return contacts
+
+@app.post("/contacts")
+async def create_contact(contact: EmergencyContactCreate, current_user: dict = Depends(get_current_user)):
+    new_contact = EmergencyContact(
+        user_id=current_user["id"],
+        name=contact.name,
+        phone=contact.phone,
+        relationship=contact.relationship,
+        is_primary=contact.is_primary,
+    )
+    await db.contacts.insert_one(new_contact.model_dump())
+    return new_contact
+
+@app.put("/contacts/{contact_id}")
+async def update_contact(contact_id: str, contact: EmergencyContactCreate, current_user: dict = Depends(get_current_user)):
+    result = await db.contacts.update_one(
+        {"id": contact_id, "user_id": current_user["id"]},
+        {"$set": contact.model_dump()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    updated = await db.contacts.find_one({"id": contact_id}, {"_id": 0})
+    return updated
+
+@app.delete("/contacts/{contact_id}")
+async def delete_contact(contact_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.contacts.delete_one({"id": contact_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return {"message": "Contact deleted"}
+
+# ==================== SETTINGS ROUTES ====================
+
+@app.get("/settings")
+async def get_settings(current_user: dict = Depends(get_current_user)):
+    settings = await db.settings.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not settings:
+        # Create default settings if none exist
+        settings = UserSettings(user_id=current_user["id"])
+        await db.settings.insert_one(settings.model_dump())
+        return settings.model_dump()
+    return settings
+
+@app.put("/settings")
+async def update_settings(updates: UserSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.settings.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": update_data},
+        upsert=True
+    )
+    settings = await db.settings.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    return settings
+
+# ==================== SOS ROUTES ====================
+
+@app.post("/sos")
+async def create_sos(alert: SOSAlertCreate, current_user: dict = Depends(get_current_user)):
+    new_alert = SOSAlert(
+        user_id=current_user["id"],
+        latitude=alert.latitude,
+        longitude=alert.longitude,
+        message=alert.message,
+        trigger_source=alert.trigger_source,
+    )
+    await db.sos_alerts.insert_one(new_alert.model_dump())
+
+    # Try to send SMS via Twilio
+    twilio = get_twilio_client()
+    if twilio:
+        contacts = await db.contacts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(10)
+        for contact in contacts:
+            try:
+                maps_link = f"https://maps.google.com/?q={alert.latitude},{alert.longitude}"
+                twilio.messages.create(
+                    body=f"🚨 SOS Alert from {current_user.get('name', 'your contact')}! Location: {maps_link}",
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=contact["phone"]
+                )
+            except Exception as e:
+                print(f"Twilio error: {e}")
+
+    return new_alert
+
+@app.get("/sos")
+async def get_sos_alerts(current_user: dict = Depends(get_current_user)):
+    alerts = await db.sos_alerts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(50)
+    return alerts
+
+# ==================== LOCATION ROUTES ====================
+
+@app.post("/location")
+async def update_location(location: LocationCreate, current_user: dict = Depends(get_current_user)):
+    new_location = LocationHistory(
+        user_id=current_user["id"],
+        latitude=location.latitude,
+        longitude=location.longitude,
+        battery_level=location.battery_level,
+        is_emergency=location.is_emergency,
+    )
+    await db.locations.insert_one(new_location.model_dump())
+    return new_location
+
+# ==================== BATTERY ROUTES ====================
+
+@app.post("/battery/update")
+async def update_battery(battery: BatteryStatus, current_user: dict = Depends(get_current_user)):
+    settings = await db.settings.find_one({"user_id": current_user["id"]})
+
+    # Send location alert on low battery if enabled
+    if settings and settings.get("send_location_on_low_battery"):
+        threshold = settings.get("low_battery_threshold", 20)
+        if battery.level <= threshold and battery.latitude and battery.longitude:
+            twilio = get_twilio_client()
+            if twilio:
+                contacts = await db.contacts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(10)
+                for contact in contacts:
+                    try:
+                        maps_link = f"https://maps.google.com/?q={battery.latitude},{battery.longitude}"
+                        twilio.messages.create(
+                            body=f"⚠️ {current_user.get('name', 'Your contact')}'s battery is at {battery.level}%. Last location: {maps_link}",
+                            from_=TWILIO_PHONE_NUMBER,
+                            to=contact["phone"]
+                        )
+                    except Exception as e:
+                        print(f"Twilio error: {e}")
+
+    return {"message": "Battery status updated", "level": battery.level}
+
+# ==================== FAKE CALL CONTACTS ROUTES ====================
+
+@app.get("/fake-call-contacts")
+async def get_fake_call_contacts(current_user: dict = Depends(get_current_user)):
+    contacts = await db.fake_call_contacts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(20)
+    return contacts
+
+@app.post("/fake-call-contacts")
+async def create_fake_call_contact(contact: FakeCallContactCreate, current_user: dict = Depends(get_current_user)):
+    new_contact = FakeCallContact(
+        user_id=current_user["id"],
+        name=contact.name,
+        phone=contact.phone,
+    )
+    await db.fake_call_contacts.insert_one(new_contact.model_dump())
+    return new_contact
+
+@app.delete("/fake-call-contacts/{contact_id}")
+async def delete_fake_call_contact(contact_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.fake_call_contacts.delete_one({"id": contact_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    return {"message": "Contact deleted"}
+
+# ==================== GOING OUT ROUTES ====================
+
+@app.get("/going-out/active")
+async def get_active_session(current_user: dict = Depends(get_current_user)):
+    session = await db.going_out_sessions.find_one(
+        {"user_id": current_user["id"], "is_active": True}, {"_id": 0}
+    )
+    return session or {}
+
+@app.post("/going-out/start")
+async def start_going_out(session: GoingOutSessionCreate, current_user: dict = Depends(get_current_user)):
+    # End any existing active session
+    await db.going_out_sessions.update_many(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat(), "ended_reason": "replaced"}}
+    )
+    new_session = GoingOutSession(
+        user_id=current_user["id"],
+        preset=session.preset,
+        voice_activation_enabled=session.voice_activation_enabled,
+        shake_detection_enabled=session.shake_detection_enabled,
+        auto_record_enabled=session.auto_record_enabled,
+        checkin_enabled=session.checkin_enabled,
+        checkin_interval=session.checkin_interval,
+    )
+    await db.going_out_sessions.insert_one(new_session.model_dump())
+    return new_session
+
+@app.post("/going-out/end")
+async def end_going_out(current_user: dict = Depends(get_current_user)):
+    result = await db.going_out_sessions.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat(), "ended_reason": "manual"}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="No active session found")
+    return {"message": "Session ended"}
+
+@app.post("/going-out/checkin")
+async def checkin(response: CheckinResponse, current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    await db.going_out_sessions.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"last_checkin": now}}
+    )
+    return {"message": "Check-in recorded", "is_safe": response.is_safe}
+
+@app.post("/going-out/missed-checkin")
+async def missed_checkin(current_user: dict = Depends(get_current_user)):
+    twilio = get_twilio_client()
+    if twilio:
+        contacts = await db.contacts.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(10)
+        for contact in contacts:
+            try:
+                twilio.messages.create(
+                    body=f"⚠️ {current_user.get('name', 'Your contact')} missed their safety check-in. Please check on them.",
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=contact["phone"]
+                )
+            except Exception as e:
+                print(f"Twilio error: {e}")
+    return {"message": "Missed check-in alert sent"}
+
+@app.post("/going-out/verify-voice")
+async def verify_voice(verification: VoicePhraseVerification, current_user: dict = Depends(get_current_user)):
+    return {"verified": verification.is_match, "confidence": verification.confidence}
+
+# ==================== JOURNEY SHARING ROUTES ====================
+
+@app.post("/journey/start")
+async def start_journey(journey: JourneyShareCreate, current_user: dict = Depends(get_current_user)):
+    # End any existing active journey
+    await db.journeys.update_many(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    from datetime import timedelta
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=journey.duration_hours)).isoformat()
+    new_journey = JourneyShare(
+        user_id=current_user["id"],
+        user_name=current_user.get("name", "Unknown"),
+        preset=journey.preset,
+        current_latitude=journey.latitude,
+        current_longitude=journey.longitude,
+        expires_at=expires_at,
+    )
+    await db.journeys.insert_one(new_journey.model_dump())
+    return new_journey
+
+@app.get("/journey/active")
+async def get_active_journey(current_user: dict = Depends(get_current_user)):
+    journey = await db.journeys.find_one(
+        {"user_id": current_user["id"], "is_active": True}, {"_id": 0}
+    )
+    return journey or {}
+
+@app.post("/journey/update-location")
+async def update_journey_location(location: JourneyLocationUpdate, current_user: dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    await db.journeys.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {
+            "current_latitude": location.latitude,
+            "current_longitude": location.longitude,
+            "battery_level": location.battery_level,
+            "last_updated": now
+        }}
+    )
+    return {"message": "Location updated"}
+
+@app.post("/journey/end")
+async def end_journey(current_user: dict = Depends(get_current_user)):
+    result = await db.journeys.update_one(
+        {"user_id": current_user["id"], "is_active": True},
+        {"$set": {"is_active": False, "ended_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="No active journey found")
+    return {"message": "Journey ended"}
+
+@app.get("/journey/track/{share_token}")
+async def track_journey(share_token: str):
+    journey = await db.journeys.find_one({"share_token": share_token, "is_active": True}, {"_id": 0})
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found or expired")
+    return JourneySharePublic(
+        user_name=journey["user_name"],
+        preset=journey.get("preset"),
+        current_latitude=journey.get("current_latitude"),
+        current_longitude=journey.get("current_longitude"),
+        battery_level=journey.get("battery_level"),
+        last_updated=journey["last_updated"],
+        started_at=journey["started_at"],
+        is_active=journey["is_active"],
+    )
+
+# ==================== AUDIO ANALYSIS ROUTE ====================
+
+@app.post("/analyze-audio")
+async def analyze_audio(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        with open(tmp_path, "rb") as audio_file:
+            transcription = openai_client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+
+        transcript_text = transcription.text
+
+        analysis = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Analyze this audio transcript for threats or danger. Respond in JSON with fields: is_threat (bool), threat_level (none/low/medium/high), threat_type (string or null), detected_language (string), confidence (0-1), recommended_action (string)."
+                },
+                {"role": "user", "content": transcript_text}
+            ]
+        )
+
+        import json as json_lib
+        result = json_lib.loads(analysis.choices[0].message.content)
+        return ThreatAnalysisResponse(
+            is_threat=result.get("is_threat", False),
+            threat_level=result.get("threat_level", "none"),
+            threat_type=result.get("threat_type"),
+            transcription=transcript_text,
+            detected_language=result.get("detected_language"),
+            confidence=result.get("confidence", 0.0),
+            recommended_action=result.get("recommended_action", "No action needed"),
+        )
+    except Exception as e:
+        print(f"Audio analysis error: {e}")
+        raise HTTPException(status_code=500, detail="Audio analysis failed")
