@@ -78,9 +78,7 @@ def get_twilio_client() -> Optional[Client]:
 
 # ==================== ASSISTANT ENDPOINT ====================
 
-from openai import OpenAI
-
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from ai_provider import generate_ai_response
 
 class AssistantMessage(BaseModel):
     message: str
@@ -90,27 +88,11 @@ async def assistant_endpoint(payload: AssistantMessage):
     user_message = payload.message
 
     try:
-        completion = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are SafeGuard AI, a calm, supportive safety companion. "
-                        "You speak clearly and simply. You never repeat the user's message. "
-                        "You help users understand safety features, alerts, emergency contacts, "
-                        "and how the app works. Your tone is warm, steady, and reassuring."
-                    )
-                },
-                {"role": "user", "content": user_message}
-            ]
-        )
-
-        reply = completion.choices[0].message.content
+        reply = await generate_ai_response(user_message)
         return {"reply": reply}
 
     except Exception as e:
-        print("OpenAI ERROR:", e)
+        print("AI ERROR:", e)
         raise HTTPException(status_code=500, detail="Assistant failed to generate a response.")
 
 # ==================== ROOT ENDPOINT ====================
