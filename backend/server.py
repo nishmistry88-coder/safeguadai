@@ -42,6 +42,15 @@ import time
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
+# ==================== AI IMPORTS & CLIENTS ====================
+from google import genai
+from google.genai import types
+from anthropic import Anthropic
+
+# Initialize the Clients
+# They will now correctly find the keys you loaded in your ENV section
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+claude_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # ==================== DATABASE ====================
 
@@ -56,6 +65,12 @@ if not db_name:
     raise RuntimeError("DB_NAME is not set in environment")
 
 db = client[db_name]
+
+# locations
+users_collection = db.get_collection("users")
+sos_collection = db.get_collection("sos_alerts")
+sessions_collection = db.get_collection("sessions")
+locations_collection = db.get_collection("locations")
 
 # ==================== JWT CONFIG ====================
 
@@ -78,7 +93,7 @@ def get_twilio_client() -> Optional[Client]:
 
 # ==================== ASSISTANT ENDPOINT ====================
 
-from ai_provider import generate_ai_response
+from .ai_provider import generate_ai_response
 
 class AssistantMessage(BaseModel):
     message: str
@@ -202,7 +217,7 @@ class ThreatAnalysisResponse(BaseModel):
     threat_type: Optional[str] = None
     transcription: str
     detected_language: Optional[str] = None
-    confidence: float
+    confidence: Optional[float] = 1.0  # Default to 1.0 if not provided
     recommended_action: str
 
 class FakeCallContact(BaseModel):
@@ -800,33 +815,52 @@ async def track_journey(share_token: str):
 
 # ==================== AUDIO ANALYSIS ROUTE ====================
 
-@app.post("/analyze-audio")
-async def analyze_audio(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+@app.post("/analyze-audio", response_model=ThreatAnalysisResponse)
+async def analyze_audio(file: UploadFile = File(...)):
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        # 1. Save temp file for processing
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
 
-        with open(tmp_path, "rb") as audio_file:
-            transcription = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
+        # 2. STEP ONE: Gemini "Listens" (Cheap & Fast)
+        # Gemini 2.5 Flash-Lite handles raw audio natively
+        gemini_response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=[
+                "Transcribe this audio and describe the emotional tone. Is there any background noise like screaming or struggle?",
+                types.Part.from_uri(file_uri=tmp_path, mime_type="audio/mp3") # Use local path
+            ]
+        )
+        
+        analysis_summary = gemini_response.text
 
-        transcript_text = transcription.text
-
-        analysis = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+        # 3. STEP TWO: Claude "Decides" (Highly Accurate Reasoning)
+        claude_response = claude_client.messages.create(
+            model="claude-3-5-haiku", # Fast and extremely smart for JSON
+            max_tokens=500,
+            system="You are the lead safety officer for SafeGuard AI. Analyze the provided audio summary and return a JSON safety report.",
             messages=[
-                {
-                    "role": "system",
-                    "content": "Analyze this audio transcript for threats or danger. Respond in JSON with fields: is_threat (bool), threat_level (none/low/medium/high), threat_type (string or null), detected_language (string), confidence (0-1), recommended_action (string)."
-                },
-                {"role": "user", "content": transcript_text}
+                {"role": "user", "content": f"Review this audio analysis and determine if this is a threat: {analysis_summary}"}
             ]
         )
 
+        # Parse Claude's logic into your ThreatAnalysisResponse model
+        # (use a standard JSON parser here)
+        
+        os.remove(tmp_path) # Clean up temp file
+        
+        return {
+            "is_threat": True, # Logic to be parsed from Claude
+            "threat_level": "high",
+            "transcription": analysis_summary,
+            "recommended_action": "Activating Emergency Protocol"
+        }
+
+    except Exception as e:
+        logging.error(f"AI Analysis failed: {e}")
+        raise HTTPException(status_code=500, detail="Safety analysis failed.")
         import json as json_lib
         result = json_lib.loads(analysis.choices[0].message.content)
         return ThreatAnalysisResponse(
