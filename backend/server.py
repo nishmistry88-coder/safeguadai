@@ -47,10 +47,17 @@ from google import genai
 from google.genai import types
 from anthropic import Anthropic
 
+# Using .get with a check to prevent the "None" crash
+gemini_key = os.getenv("GEMINI_API_KEY")
+claude_key = os.getenv("ANTHROPIC_API_KEY")
+
+if not gemini_key or not claude_key:
+    # This will print in your Render logs so you can see if the keys are missing
+    logging.error(f"CRITICAL: API Keys missing! Gemini: {'Set' if gemini_key else 'MISSING'}, Claude: {'Set' if claude_key else 'MISSING'}")
+
 # Initialize the Clients
-# They will now correctly find the keys you loaded in your ENV section
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-claude_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+gemini_client = genai.Client(api_key=gemini_key)
+claude_client = Anthropic(api_key=claude_key)
 
 # ==================== DATABASE ====================
 
