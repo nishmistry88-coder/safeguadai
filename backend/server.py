@@ -100,7 +100,7 @@ def get_twilio_client() -> Optional[Client]:
 
 # ==================== ASSISTANT ENDPOINT ====================
 
-from .ai_provider import generate_ai_response
+from ai_provider import generate_ai_response
 
 class AssistantMessage(BaseModel):
     message: str
