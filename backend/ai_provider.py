@@ -2,7 +2,7 @@ import os
 from openai import AsyncOpenAI
 import httpx
 
-from .utils.conversation_store import get_conversation, save_message
+from utils.conversation_store import get_conversation, save_message
 AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
