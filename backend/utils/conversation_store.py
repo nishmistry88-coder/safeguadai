@@ -1,5 +1,5 @@
 from datetime import datetime
-from ..database import db  # correct relative import
+from database import db
 
 CONVO_LIMIT = 10
 
