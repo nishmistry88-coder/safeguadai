@@ -11,7 +11,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://safeguadai-frontend.onrender.com",
-        "https://safeguadai.onrender.com", 
+        "https://safeguadai.onrender.com",
+        "*" # Added wildcard for mobile testing (Expo Go)
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -113,12 +114,13 @@ class UserResponse(BaseModel):
 class AssistantRequest(BaseModel):
     message: str
     user_id: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    # 🛡️ UPDATED: Match these to 'lat' and 'lng' from your mobile-app/utils/api.ts
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    name: Optional[str] = "User"
 
 class AssistantResponse(BaseModel):
     reply: str
-
 # ==================== HELPERS ====================
 
 async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
