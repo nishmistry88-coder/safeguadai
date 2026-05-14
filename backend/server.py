@@ -122,8 +122,9 @@ class AssistantResponse(BaseModel):
 # ==================== HELPERS ====================
 
 async def get_nearby_safe_havens(lat: float, lng: float):
-    """Searches for police, hospitals, and 24h stores near the user using Google Places."""
-    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    """Searches for safe spots AND calculates walking time."""
+    # Step 1: Find the spots
+    places_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
     params = {
         "location": f"{lat},{lng}",
         "radius": 1500,
@@ -133,18 +134,35 @@ async def get_nearby_safe_havens(lat: float, lng: float):
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, params=params)
-            data = response.json()
-            results = data.get("results", [])[:3]
+            p_resp = await client.get(places_url, params=params)
+            results = p_resp.json().get("results", [])[:2]
+            
+            if not results:
+                return []
+
+            # Step 2: Get walking times for these spots
+            destinations = "|".join([f"place_id:{r['place_id']}" for r in results])
+            dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+            dist_params = {
+                "origins": f"{lat},{lng}",
+                "destinations": destinations,
+                "mode": "walking",
+                "key": maps_key
+            }
+            
+            d_resp = await client.get(dist_url, params=dist_params)
+            dist_data = d_resp.json()
             
             safe_spots = []
-            for spot in results:
+            for i, spot in enumerate(results):
+                # Pull the duration in minutes from the distance matrix
+                duration = dist_data['rows'][0]['elements'][i]['duration']['text']
                 name = spot.get('name')
-                address = spot.get('vicinity', 'nearby')
-                safe_spots.append(f"{name} at {address}")
+                safe_spots.append(f"{name} ({duration} walk away)")
+                
             return safe_spots
         except Exception as e:
-            logging.error(f"Maps API Error: {e}")
+            logging.error(f"Maps calculation error: {e}")
             return []
 
 # ==================== ASSISTANT ENDPOINT ====================
@@ -152,38 +170,48 @@ async def get_nearby_safe_havens(lat: float, lng: float):
 @app.post("/assistant", response_model=AssistantResponse)
 async def assistant_endpoint(request: AssistantRequest):
     try:
-        location_context = ""
+        # 1. Pull the last 5 messages from MongoDB to give the AI a memory
+        past_messages = await db.sessions.find(
+            {"user_id": request.user_id}
+        ).sort("timestamp", -1).limit(5).to_list(length=5)
         
+        # Reverse them so they are in chronological order
+        history = []
+        for msg in reversed(past_messages):
+            history.append({"role": "user", "content": msg["user_message"]})
+            history.append({"role": "assistant", "content": msg["ai_response"]})
+
+        location_context = ""
         if request.latitude and request.longitude:
             spots = await get_nearby_safe_havens(request.latitude, request.longitude)
             if spots:
-                location_context = f"\nMAP DATA: The nearest safe havens are: {', '.join(spots)}."
-            else:
-                location_context = "\nMAP DATA: No immediate police/safe zones found within 1.5km."
+                location_context = f"\nMAP DATA: {', '.join(spots)}."
 
-        system_instruction = f"""
-        You are the SafeGuard AI Guardian. Your mission is proactive personal safety.
-        {location_context}
+        system_instruction = f"You are the SafeGuard AI Guardian. {location_context}"
         
-        Your Task:
-        - Use the MAP DATA to guide the user to a specific safe location.
-        - Give calm, tactical advice (e.g., 'Head to [Store Name], it is 200m away').
-        - Keep responses under 3 sentences.
-        """
+        # 2. Combine System Instruction + History + New Message
+        messages = [{"role": "system", "content": system_instruction}]
+        messages.extend(history)
+        messages.append({"role": "user", "content": request.message})
 
         completion = openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": request.message}
-            ]
+            messages=messages
         )
-        return AssistantResponse(reply=completion.choices[0].message.content)
+        
+        reply = completion.choices[0].message.content
 
+        # 3. SAVE this interaction to MongoDB so the AI remembers it next time
+        await db.sessions.insert_one({
+            "user_id": request.user_id,
+            "user_message": request.message,
+            "ai_response": reply,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+
+        return AssistantResponse(reply=reply)
     except Exception as e:
-        logging.error(f"Assistant Error: {e}")
-        return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
-
+        return AssistantResponse(reply="I'm here. Stay alert.")
 # ==================== ROOT ENDPOINT ====================
 
 _start_time = time.time()
