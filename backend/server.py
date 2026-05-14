@@ -11,7 +11,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://safeguadai-frontend.onrender.com",
-        "https://safeguadai.onrender.com", # Added live URL
+        "https://safeguadai.onrender.com", 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -36,6 +36,7 @@ import tempfile
 import aiofiles
 import json
 import time
+import httpx  # Required for Google Maps API calls
 
 # ==================== ENV + ROOT DIR ====================
 
@@ -46,19 +47,20 @@ load_dotenv(ROOT_DIR / ".env")
 from google import genai
 from google.genai import types
 from anthropic import Anthropic
-from openai import OpenAI  # Added OpenAI import
+from openai import OpenAI
 
 gemini_key = os.getenv("GEMINI_API_KEY")
 claude_key = os.getenv("ANTHROPIC_API_KEY")
-openai_key = os.getenv("OPENAI_API_KEY") # Added OpenAI Key
+openai_key = os.getenv("OPENAI_API_KEY")
+maps_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
-if not gemini_key or not claude_key or not openai_key:
-    logging.error(f"CRITICAL: API Keys missing! Gemini: {'Set' if gemini_key else 'MISSING'}, Claude: {'Set' if claude_key else 'MISSING'}, OpenAI: {'Set' if openai_key else 'MISSING'}")
+if not all([gemini_key, claude_key, openai_key, maps_key]):
+    logging.error("CRITICAL: One or more API Keys are missing from environment variables!")
 
-# Initialize the Clients
+# Initialize the Elite AI Team
 gemini_client = genai.Client(api_key=gemini_key)
 claude_client = Anthropic(api_key=claude_key)
-openai_client = OpenAI(api_key=openai_key) # Initialize OpenAI
+openai_client = OpenAI(api_key=openai_key)
 
 # ==================== DATABASE ====================
 
@@ -67,12 +69,7 @@ if not mongo_url:
     raise RuntimeError("MONGO_URL is not set in environment")
 
 client = AsyncIOMotorClient(mongo_url)
-
-db_name = os.getenv("DB_NAME")
-if not db_name:
-    raise RuntimeError("DB_NAME is not set in environment")
-
-db = client[db_name]
+db = client[os.getenv("DB_NAME", "safeguard")]
 
 # Collections
 users_collection = db.get_collection("users")
@@ -80,13 +77,11 @@ sos_collection = db.get_collection("sos_alerts")
 sessions_collection = db.get_collection("sessions")
 locations_collection = db.get_collection("locations")
 
-# ==================== JWT CONFIG ====================
+# ==================== JWT & TWILIO CONFIG ====================
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "safeguard_secret_key")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
-
-# ==================== TWILIO CONFIG ====================
 
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
@@ -97,9 +92,24 @@ def get_twilio_client() -> Optional[Client]:
         return None
     return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
-# ==================== ASSISTANT MODELS & ENDPOINT ====================
+# ==================== MODELS ====================
 
-# We define the models here since we removed the external ai_provider
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    email: str
+    name: str
+    created_at: str
+
 class AssistantRequest(BaseModel):
     message: str
     user_id: str
@@ -109,17 +119,56 @@ class AssistantRequest(BaseModel):
 class AssistantResponse(BaseModel):
     reply: str
 
+# ==================== HELPERS ====================
+
+async def get_nearby_safe_havens(lat: float, lng: float):
+    """Searches for police, hospitals, and 24h stores near the user using Google Places."""
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    params = {
+        "location": f"{lat},{lng}",
+        "radius": 1500,
+        "type": "police|hospital|convenience_store",
+        "key": maps_key
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params)
+            data = response.json()
+            results = data.get("results", [])[:3]
+            
+            safe_spots = []
+            for spot in results:
+                name = spot.get('name')
+                address = spot.get('vicinity', 'nearby')
+                safe_spots.append(f"{name} at {address}")
+            return safe_spots
+        except Exception as e:
+            logging.error(f"Maps API Error: {e}")
+            return []
+
+# ==================== ASSISTANT ENDPOINT ====================
+
 @app.post("/assistant", response_model=AssistantResponse)
 async def assistant_endpoint(request: AssistantRequest):
     try:
-        system_instruction = """
+        location_context = ""
+        
+        if request.latitude and request.longitude:
+            spots = await get_nearby_safe_havens(request.latitude, request.longitude)
+            if spots:
+                location_context = f"\nMAP DATA: The nearest safe havens are: {', '.join(spots)}."
+            else:
+                location_context = "\nMAP DATA: No immediate police/safe zones found within 1.5km."
+
+        system_instruction = f"""
         You are the SafeGuard AI Guardian. Your mission is proactive personal safety.
-        When a user describes a situation:
-        - Assess the threat level immediately.
-        - Give calm, tactical, and direct safety advice.
-        - Suggest app features like 'Night Walk' or 'Live Share'.
-        - If coordinates are provided, acknowledge you are monitoring their location.
-        - Keep responses concise (under 3 sentences).
+        {location_context}
+        
+        Your Task:
+        - Use the MAP DATA to guide the user to a specific safe location.
+        - Give calm, tactical advice (e.g., 'Head to [Store Name], it is 200m away').
+        - Keep responses under 3 sentences.
         """
 
         completion = openai_client.chat.completions.create(
@@ -129,12 +178,11 @@ async def assistant_endpoint(request: AssistantRequest):
                 {"role": "user", "content": request.message}
             ]
         )
-
         return AssistantResponse(reply=completion.choices[0].message.content)
 
     except Exception as e:
-        logging.error(f"Assistant API Error: {e}")
-        return AssistantResponse(reply="I'm here with you. Stay aware of your surroundings and move toward a well-lit area.")
+        logging.error(f"Assistant Error: {e}")
+        return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
 
 # ==================== ROOT ENDPOINT ====================
 
@@ -146,7 +194,7 @@ def read_root():
     return {
         "status": "ok",
         "service": "safeguard-backend",
-        "version": "0.0.4", # Incremented version
+        "version": "0.0.5",
         "uptime_seconds": uptime_seconds
     }
 
