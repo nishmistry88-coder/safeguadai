@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // 1. Added useState
+import React, { useState } from "react";
 import { router } from "expo-router";
 import {
   View,
@@ -8,50 +8,42 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert, // 2. Added Alert for errors
+  Alert,
+  ActivityIndicator, // Added for the loading spinner
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage'; // To save the login token
+// 🛡️ IMPORT YOUR CONTEXT HERE
+import { useAuth } from "../../contexts/AuthContext"; 
 
 export default function LoginScreen() {
-  // 3. State for inputs
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🛡️ HOOK INTO THE GLOBAL LOGIN
+  const { login } = useAuth(); 
+
   const handleLogin = async () => {
-    // 1. Basic validation
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
-    setLoading(true); // Show the "Connecting..." spinner
+    setLoading(true); 
     try {
-      const response = await fetch("https://safeguadai.onrender.com/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          // 2. Clean the email to prevent "Incorrect Password" errors
-          email: email.toLowerCase().trim(), 
-          password: password 
-        }),
-      });
+      // 🛡️ USE THE CONTEXT LOGIN
+      // This handles the fetch AND saves the user globally for the Orb
+      const result = await login(email.toLowerCase().trim(), password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // 3. Save the token and go to the home screen
-        await AsyncStorage.setItem("userToken", data.access_token);
-        router.replace("/(tabs)/home");
+      if (result.success) {
+        // Redirect to your dashboard
+        router.replace("/(tabs)/dashboard");
       } else {
-        // 4. Handle errors from the backend (like 401 Unauthorized)
-        Alert.alert("Login Failed", data.detail || "Invalid email or password");
+        Alert.alert("Login Failed", result.message || "Invalid credentials");
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Network Error", "Could not connect to SafeGuard servers. Check your internet.");
+      Alert.alert("Network Error", "Check your connection and try again.");
     } finally {
-      setLoading(false); // Hide the spinner
+      setLoading(false);
     }
   };
 

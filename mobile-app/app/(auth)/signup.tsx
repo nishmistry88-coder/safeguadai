@@ -11,16 +11,19 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+// 🛡️ 1. Import the global Auth hook
+import { useAuth } from "../../contexts/AuthContext"; 
 
 export default function SignupScreen() {
-  // 1. State for user details
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🛡️ 2. Hook into the global register function
+  const { register } = useAuth(); 
+
   const handleSignup = async () => {
-    // Basic validation
     if (!name || !email || !password) {
       Alert.alert("Missing Info", "Please fill in all fields to join SafeGuard.");
       return;
@@ -28,30 +31,20 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch("https://safeguadai.onrender.com/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name: name, // Matches your Pydantic model in FastAPI
-          email: email.toLowerCase().trim(), 
-          password: password 
-        }),
-      });
+      // 🛡️ 3. Use the central register function
+      // This matches your backend Pydantic model (name, email, password)
+      const result = await register(name, email.toLowerCase().trim(), password);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         Alert.alert(
           "Account Created", 
           "Welcome to SafeGuard AI. Please log in to continue.",
           [{ text: "OK", onPress: () => router.replace("/(auth)/login") }]
         );
       } else {
-        // Handle case where email is already taken
-        Alert.alert("Signup Failed", data.detail || "Could not create account.");
+        Alert.alert("Signup Failed", result.message || "Could not create account.");
       }
     } catch (error) {
-      console.error(error);
       Alert.alert("Connection Error", "Check your internet or Render backend status.");
     } finally {
       setLoading(false);
