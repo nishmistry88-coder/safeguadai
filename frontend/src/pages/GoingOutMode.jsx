@@ -106,7 +106,7 @@ export const GoingOutMode = () => {
 
   const fetchActiveSession = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/active`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -120,7 +120,7 @@ export const GoingOutMode = () => {
 
   const fetchActiveJourney = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/active`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/journey/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -161,7 +161,7 @@ export const GoingOutMode = () => {
 
   const startJourneyShare = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/start`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/journey/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +190,7 @@ export const GoingOutMode = () => {
 
   const stopJourneyShare = async () => {
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/end`, {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/journey/end`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -208,7 +208,7 @@ export const GoingOutMode = () => {
     }
     
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/update-location`, {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/journey/update-location`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +290,7 @@ export const GoingOutMode = () => {
     setShowCheckinDialog(false);
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/checkin`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/checkin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -321,7 +321,7 @@ export const GoingOutMode = () => {
     toast.error("Missed check-in - triggering SOS!");
     
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/missed-checkin`, {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/missed-checkin`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -333,7 +333,7 @@ export const GoingOutMode = () => {
 
   const startGoingOutMode = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/start`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -383,7 +383,7 @@ export const GoingOutMode = () => {
         formData.append('audio', audioBlob, 'verification.webm');
         
         try {
-          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/verify-voice`, {
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/verify-voice`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: formData
@@ -422,7 +422,7 @@ export const GoingOutMode = () => {
 
   const forceEndSession = async () => {
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/end`, {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/end`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });

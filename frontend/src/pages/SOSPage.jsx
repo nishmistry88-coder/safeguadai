@@ -23,7 +23,7 @@ export const SOSPage = () => {
 
   const fetchUserSettings = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -90,7 +90,7 @@ export const SOSPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/sos`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/sos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -52,7 +52,7 @@ export const Dashboard = () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/contacts`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/contacts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -66,7 +66,7 @@ export const Dashboard = () => {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -80,7 +80,7 @@ export const Dashboard = () => {
 
   const fetchGoingOutSession = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/going-out/active`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/going-out/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -133,7 +133,7 @@ export const Dashboard = () => {
 
   const sendBatteryUpdate = async (level) => {
     try {
-      await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/battery/update`, {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/battery/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -197,7 +197,7 @@ export const Dashboard = () => {
 
     try {
       toast.info("Analyzing audio...");
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/analyze-audio`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/analyze-audio`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData

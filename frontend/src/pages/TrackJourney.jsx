@@ -22,7 +22,7 @@ export const TrackJourney = () => {
 
   const fetchJourney = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/journey/track/${shareToken}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/journey/track/${shareToken}`);
       if (response.ok) {
         const data = await response.json();
         setJourney(data);

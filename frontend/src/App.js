@@ -35,7 +35,7 @@ const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem("safeguard_token");
       if (storedToken) {
         try {
-          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${storedToken}` }
           });
           if (response.ok) {

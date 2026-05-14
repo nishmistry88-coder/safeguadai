@@ -45,7 +45,7 @@ export const FakeCall = () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/fake-call-contacts`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/fake-call-contacts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -67,7 +67,7 @@ export const FakeCall = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/fake-call-contacts`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/fake-call-contacts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

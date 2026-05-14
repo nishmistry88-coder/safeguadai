@@ -30,7 +30,7 @@ export const Contacts = () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/contacts`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/contacts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -52,8 +52,8 @@ export const Contacts = () => {
 
     try {
       const url = editingContact
-        ? `${process.env.REACT_APP_BACKEND_URL}/api/contacts/${editingContact.id}`
-        : `${process.env.REACT_APP_BACKEND_URL}/api/contacts`;
+        ? `${process.env.REACT_APP_BACKEND_URL}/contacts/${editingContact.id}`
+        : `${process.env.REACT_APP_BACKEND_URL}/contacts`;
       
       const response = await fetch(url, {
         method: editingContact ? 'PUT' : 'POST',
@@ -78,7 +78,7 @@ export const Contacts = () => {
 
   const deleteContact = async (id) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/contacts/${id}`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/contacts/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

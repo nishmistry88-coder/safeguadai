@@ -62,7 +62,7 @@ export const Settings = () => {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -79,7 +79,7 @@ export const Settings = () => {
   const saveSettings = async (updates) => {
     setSaving(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/settings`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/settings`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export const Settings = () => {
         formData.append('audio', audioBlob, 'phrase.webm');
         
         try {
-          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/analyze-audio`, {
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/analyze-audio`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: formData
