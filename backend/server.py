@@ -206,6 +206,7 @@ async def assistant_endpoint(request: AssistantRequest):
         {location_context}
         
         Your Task:
+        - Check the conversation history provided. If the user already told you their name, destination, or a threat, acknowledge it.
         - Use the MAP DATA and walking times provided to give precise directions.
         - If the user asks 'how long', use the 'walk away' time from the MAP DATA.
         - Remain tactical, calm, and protective. Keep responses under 3 sentences.
