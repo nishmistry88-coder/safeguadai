@@ -123,14 +123,14 @@ class AssistantResponse(BaseModel):
 
 async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
     """Searches for safe spots using a mix of strict types and user-driven keywords."""
-    # Step 1: Find the spots
     places_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    
     params = {
         "location": f"{lat},{lng}",
         "radius": 2000,
         "type": "police|hospital|convenience_store|gas_station|pharmacy|bank|subway_station|train_station|bus_station|fire_station|local_government_office",
-        "keyword": f"{user_query} open 24 hours well-lit security"
-        "key": maps_key
+        "keyword": f"{user_query} open 24 hours well-lit security",
+        "key": maps_key  # Fixed: Comma added on the line above
     }
     
     async with httpx.AsyncClient() as client:
@@ -156,10 +156,16 @@ async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
             
             safe_spots = []
             for i, spot in enumerate(results):
-                # Pull the duration in minutes from the distance matrix
-                duration = dist_data['rows'][0]['elements'][i]['duration']['text']
-                name = spot.get('name')
-                safe_spots.append(f"{name} ({duration} walk away)")
+                try:
+                    # Pull the duration in minutes from the distance matrix
+                    elements = dist_data.get('rows', [])[0].get('elements', [])
+                    duration = elements[i].get('duration', {}).get('text', 'unknown mins')
+                    name = spot.get('name')
+                    safe_spots.append(f"{name} ({duration} walk away)")
+                except (IndexError, KeyError):
+                    # Fallback if distance matrix fails for one specific spot
+                    name = spot.get('name')
+                    safe_spots.append(f"{name} (nearby)")
                 
             return safe_spots
         except Exception as e:
@@ -230,7 +236,7 @@ async def assistant_endpoint(request: AssistantRequest):
     except Exception as e:
         logging.error(f"Assistant Error: {e}")
         return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
-    
+        
 # ==================== ROOT ENDPOINT ====================
 
 _start_time = time.time()
