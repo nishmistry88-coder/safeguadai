@@ -121,21 +121,22 @@ class AssistantResponse(BaseModel):
 
 # ==================== HELPERS ====================
 
-async def get_nearby_safe_havens(lat: float, lng: float):
-    """Searches for safe spots AND calculates walking time."""
+async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
+    """Searches for safe spots using a mix of strict types and user-driven keywords."""
     # Step 1: Find the spots
     places_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
     params = {
         "location": f"{lat},{lng}",
-        "radius": 1500,
-        "type": "police|hospital|convenience_store",
+        "radius": 2000,
+        "type": "police|hospital|convenience_store|gas_station|pharmacy|bank|subway_station|train_station|bus_station|fire_station|local_government_office",
+        "keyword": f"{user_query} open 24 hours well-lit security"
         "key": maps_key
     }
     
     async with httpx.AsyncClient() as client:
         try:
             p_resp = await client.get(places_url, params=params)
-            results = p_resp.json().get("results", [])[:2]
+            results = p_resp.json().get("results", [])[:3]
             
             if not results:
                 return []
@@ -162,7 +163,7 @@ async def get_nearby_safe_havens(lat: float, lng: float):
                 
             return safe_spots
         except Exception as e:
-            logging.error(f"Maps calculation error: {e}")
+            logging.error(f"Maps API Failure: {e}")
             return []
 
 # ==================== ASSISTANT ENDPOINT ====================
@@ -170,12 +171,11 @@ async def get_nearby_safe_havens(lat: float, lng: float):
 @app.post("/assistant", response_model=AssistantResponse)
 async def assistant_endpoint(request: AssistantRequest):
     try:
-        # 1. Pull the last 5 messages from MongoDB to give the AI a memory
+        # 1. Pull the last 5 messages for memory
         past_messages = await db.sessions.find(
             {"user_id": request.user_id}
         ).sort("timestamp", -1).limit(5).to_list(length=5)
         
-        # Reverse them so they are in chronological order
         history = []
         for msg in reversed(past_messages):
             history.append({"role": "user", "content": msg["user_message"]})
@@ -183,12 +183,28 @@ async def assistant_endpoint(request: AssistantRequest):
 
         location_context = ""
         if request.latitude and request.longitude:
-            spots = await get_nearby_safe_havens(request.latitude, request.longitude)
+            # Passes user message to the Maps helper
+            spots = await get_nearby_safe_havens(
+                request.latitude, 
+                request.longitude, 
+                request.message
+            )
+            
             if spots:
-                location_context = f"\nMAP DATA: {', '.join(spots)}."
+                location_context = f"\nMAP DATA (Nearby and walking distance): {', '.join(spots)}."
+            else:
+                location_context = "\nMAP DATA: I searched the area but no matching safe spots were found within walking distance."
 
-        system_instruction = f"You are the SafeGuard AI Guardian. {location_context}"
+        system_instruction = f"""
+        You are the SafeGuard AI Guardian.
+        {location_context}
         
+        Your Task:
+        - Use the MAP DATA and walking times provided to give precise directions.
+        - If the user asks 'how long', use the 'walk away' time from the MAP DATA.
+        - Remain tactical, calm, and protective. Keep responses under 3 sentences.
+        """
+
         # 2. Combine System Instruction + History + New Message
         messages = [{"role": "system", "content": system_instruction}]
         messages.extend(history)
@@ -201,7 +217,7 @@ async def assistant_endpoint(request: AssistantRequest):
         
         reply = completion.choices[0].message.content
 
-        # 3. SAVE this interaction to MongoDB so the AI remembers it next time
+        # 3. SAVE interaction to MongoDB for memory
         await db.sessions.insert_one({
             "user_id": request.user_id,
             "user_message": request.message,
@@ -210,8 +226,11 @@ async def assistant_endpoint(request: AssistantRequest):
         })
 
         return AssistantResponse(reply=reply)
+
     except Exception as e:
-        return AssistantResponse(reply="I'm here. Stay alert.")
+        logging.error(f"Assistant Error: {e}")
+        return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
+    
 # ==================== ROOT ENDPOINT ====================
 
 _start_time = time.time()
