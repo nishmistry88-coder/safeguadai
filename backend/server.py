@@ -190,11 +190,12 @@ async def assistant_endpoint(request: AssistantRequest):
             history.append({"role": "assistant", "content": msg["ai_response"]})
 
         location_context = ""
-        if request.latitude and request.longitude:
+        # Changed from request.latitude/longitude to .lat/.lng
+        if request.lat is not None and request.lng is not None:
             # Passes user message to the Maps helper
             spots = await get_nearby_safe_havens(
-                request.latitude, 
-                request.longitude, 
+                request.lat, 
+                request.lng, 
                 request.message
             )
             
@@ -237,6 +238,7 @@ async def assistant_endpoint(request: AssistantRequest):
         return AssistantResponse(reply=reply)
 
     except Exception as e:
+        # This is where your Render error was being caught!
         logging.error(f"Assistant Error: {e}")
         return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
         
@@ -335,13 +337,6 @@ class ThreatAnalysisResponse(BaseModel):
     detected_language: Optional[str] = None
     confidence: Optional[float] = 1.0
     recommended_action: str
-
-
-class AssistantRequest(BaseModel):
-    message: str
-    user_id: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
 
 class AssistantResponse(BaseModel):
     reply: str
