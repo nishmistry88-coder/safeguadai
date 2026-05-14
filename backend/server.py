@@ -5,13 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="SafeGuard API")
 
-
 # CORS MUST be here — before ANY other imports
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "https://safeguadai-frontend.onrender.com",
+        "https://safeguadai.onrender.com", # Added live URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -37,27 +37,28 @@ import aiofiles
 import json
 import time
 
-
 # ==================== ENV + ROOT DIR ====================
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
+
 # ==================== AI IMPORTS & CLIENTS ====================
 from google import genai
 from google.genai import types
 from anthropic import Anthropic
+from openai import OpenAI  # Added OpenAI import
 
-# Using .get with a check to prevent the "None" crash
 gemini_key = os.getenv("GEMINI_API_KEY")
 claude_key = os.getenv("ANTHROPIC_API_KEY")
+openai_key = os.getenv("OPENAI_API_KEY") # Added OpenAI Key
 
-if not gemini_key or not claude_key:
-    # This will print in your Render logs so you can see if the keys are missing
-    logging.error(f"CRITICAL: API Keys missing! Gemini: {'Set' if gemini_key else 'MISSING'}, Claude: {'Set' if claude_key else 'MISSING'}")
+if not gemini_key or not claude_key or not openai_key:
+    logging.error(f"CRITICAL: API Keys missing! Gemini: {'Set' if gemini_key else 'MISSING'}, Claude: {'Set' if claude_key else 'MISSING'}, OpenAI: {'Set' if openai_key else 'MISSING'}")
 
 # Initialize the Clients
 gemini_client = genai.Client(api_key=gemini_key)
 claude_client = Anthropic(api_key=claude_key)
+openai_client = OpenAI(api_key=openai_key) # Initialize OpenAI
 
 # ==================== DATABASE ====================
 
@@ -73,7 +74,7 @@ if not db_name:
 
 db = client[db_name]
 
-# locations
+# Collections
 users_collection = db.get_collection("users")
 sos_collection = db.get_collection("sos_alerts")
 sessions_collection = db.get_collection("sessions")
@@ -92,30 +93,48 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
 def get_twilio_client() -> Optional[Client]:
-    """Return Twilio client if credentials exist, else None."""
     if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN:
         return None
     return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
+# ==================== ASSISTANT MODELS & ENDPOINT ====================
 
-# ==================== ASSISTANT ENDPOINT ====================
-
-from ai_provider import generate_ai_response
-
-class AssistantMessage(BaseModel):
+# We define the models here since we removed the external ai_provider
+class AssistantRequest(BaseModel):
     message: str
+    user_id: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
-@app.post("/assistant")
-async def assistant_endpoint(payload: AssistantMessage):
-    user_message = payload.message
+class AssistantResponse(BaseModel):
+    reply: str
 
+@app.post("/assistant", response_model=AssistantResponse)
+async def assistant_endpoint(request: AssistantRequest):
     try:
-        reply = await generate_ai_response(user_message)
-        return {"reply": reply}
+        system_instruction = """
+        You are the SafeGuard AI Guardian. Your mission is proactive personal safety.
+        When a user describes a situation:
+        - Assess the threat level immediately.
+        - Give calm, tactical, and direct safety advice.
+        - Suggest app features like 'Night Walk' or 'Live Share'.
+        - If coordinates are provided, acknowledge you are monitoring their location.
+        - Keep responses concise (under 3 sentences).
+        """
+
+        completion = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": request.message}
+            ]
+        )
+
+        return AssistantResponse(reply=completion.choices[0].message.content)
 
     except Exception as e:
-        print("AI ERROR:", e)
-        raise HTTPException(status_code=500, detail="Assistant failed to generate a response.")
+        logging.error(f"Assistant API Error: {e}")
+        return AssistantResponse(reply="I'm here with you. Stay aware of your surroundings and move toward a well-lit area.")
 
 # ==================== ROOT ENDPOINT ====================
 
@@ -127,7 +146,7 @@ def read_root():
     return {
         "status": "ok",
         "service": "safeguard-backend",
-        "version": "0.0.3",
+        "version": "0.0.4", # Incremented version
         "uptime_seconds": uptime_seconds
     }
 
@@ -137,10 +156,10 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -148,20 +167,6 @@ class UserResponse(BaseModel):
     email: str
     name: str
     created_at: str
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class UserResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str
-    email: str
-    name: str
-    created_at: str
-
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -192,7 +197,7 @@ class SOSAlert(BaseModel):
     longitude: float
     threat_level: str = "high"
     message: Optional[str] = None
-    trigger_source: str = "manual"  # manual, voice, checkin, shake, shutdown, battery
+    trigger_source: str = "manual"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     status: str = "active"
 
@@ -224,8 +229,18 @@ class ThreatAnalysisResponse(BaseModel):
     threat_type: Optional[str] = None
     transcription: str
     detected_language: Optional[str] = None
-    confidence: Optional[float] = 1.0  # Default to 1.0 if not provided
+    confidence: Optional[float] = 1.0
     recommended_action: str
+
+
+class AssistantRequest(BaseModel):
+    message: str
+    user_id: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class AssistantResponse(BaseModel):
+    reply: str
 
 class FakeCallContact(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -238,7 +253,6 @@ class FakeCallContact(BaseModel):
 class FakeCallContactCreate(BaseModel):
     name: str
     phone: str
-
 # ==================== NEW MODELS FOR SAFETY FEATURES ====================
 
 class UserSettings(BaseModel):
