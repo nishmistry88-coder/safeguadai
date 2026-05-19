@@ -78,6 +78,31 @@ sos_collection = db.get_collection("sos_alerts")
 sessions_collection = db.get_collection("sessions")
 locations_collection = db.get_collection("locations")
 
+# ==================== AUTOMATIC DATABASE INITIALIZATION ====================
+
+@app.on_event("startup")
+async def initialize_database_indexes():
+    """
+    Forces MongoDB to create the 'sos_alerts' collection if missing
+    and builds the 2dsphere index so geospatial queries don't crash.
+    """
+    try:
+        existing_collections = await db.list_collection_names()
+        
+        # Force collection instantiation if MongoDB hasn't created it yet
+        if "sos_alerts" not in existing_collections:
+            logging.info("Database migration: Constructing 'sos_alerts' collection structural space...")
+            await db.create_collection("sos_alerts")
+            
+        # Build the geospatial index on the location field format requirement
+        logging.info("Database migration: Verifying 2dsphere spatial index on 'sos_alerts'...")
+        await sos_collection.create_index([("location", "2dsphere")])
+        logging.info("SUCCESS: Geospatial safety matrix index is fully active.")
+        
+    except Exception as e:
+        logging.error(f"CRITICAL: Failed to initialize spatial index on startup: {e}")
+        
+
 # ==================== JWT & TWILIO CONFIG ====================
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "safeguard_secret_key")
