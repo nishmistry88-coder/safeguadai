@@ -101,7 +101,7 @@ async def initialize_database_indexes():
         
     except Exception as e:
         logging.error(f"CRITICAL: Failed to initialize spatial index on startup: {e}")
-        
+
 
 # ==================== JWT & TWILIO CONFIG ====================
 
@@ -228,6 +228,12 @@ class IncidentReport(BaseModel):
     description: Optional[str] = None
     lat: float
     lng: float
+
+class IncapacitationAlert(BaseModel):
+    user_id: str
+    lat: float
+    lng: float
+    status: str = "incapacitated"    
 
 # ==================== HELPERS ====================
 
@@ -729,6 +735,62 @@ async def delete_contact(contact_id: str, current_user: dict = Depends(get_curre
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Contact not found")
     return {"message": "Contact deleted"}
+
+# ==================== EMERGENCY DISPATCH ROUTE ====================
+
+@app.post("/emergency-dispatch")
+async def emergency_dispatch(alert: IncapacitationAlert):
+    """
+    Triggers an automated outbound Twilio voice call to emergency lines 
+    when a user is non-responsive during a crimson alert countdown.
+    """
+    twilio_client = get_twilio_client()
+    if not twilio_client:
+        logging.error("Twilio client unconfigured. Cannot place automated distress call.")
+        raise HTTPException(status_code=500, detail="Emergency communication gateway offline.")
+
+    # 1. Fetch user profile data using the matching 'id' parameter layout
+    user_profile = await users_collection.find_one({"id": alert.user_id})
+    user_name = user_profile.get("name", "An anonymous user") if user_profile else "A SafeGuard User"
+
+    # 2. Craft the automated verbal script for emergency dispatch operators
+    dispatch_script = f"""
+    <Response>
+        <Speak voice="alice">
+            Emergency dispatch alert. This is an automated distress broadcast from the SafeGuard AI platform on behalf of user {user_name}. 
+            The user has triggered a critical incapacitation alarm and is completely non-responsive. 
+            Automated telemetry places the user at coordinates latitude {alert.lat:.4f} and longitude {alert.lng:.4f}. 
+            I repeat: the user is non-responsive and requires immediate intervention. Dispatching rescue services to these tracking metrics immediately.
+        </Speak>
+    </Response>
+    """
+
+    try:
+        # 3. Save the critical emergency event to your MongoDB log grid
+        await sos_collection.insert_one({
+            "user_id": alert.user_id,
+            "incident_type": "INCAPACITATED_DISTRESS_CALL",
+            "description": f"Automated voice dispatch initiated for {user_name}.",
+            "location": {
+                "type": "Point",
+                "coordinates": [alert.lng, alert.lat]
+            },
+            "created_at": datetime.now(timezone.utc)
+        })
+
+        # 4. Fire the outbound Twilio call to your primary emergency contact number 
+        call = twilio_client.calls.create(
+            twiml=dispatch_script,
+            to=os.getenv("PRIMARY_EMERGENCY_ROUTING_NUMBER", TWILIO_PHONE_NUMBER), 
+            from_=TWILIO_PHONE_NUMBER
+        )
+        
+        logging.info(f"CRIMSON EMERGENCY ALARM DEPLOYED: Call SID {call.sid}")
+        return {"status": "success", "message": "Automated dispatch voice lines successfully routed."}
+
+    except Exception as e:
+        logging.error(f"Failed to deploy emergency automated call payload: {e}")
+        raise HTTPException(status_code=500, detail="Failed to initiate outbound emergency communication.")
 
 # ==================== SETTINGS ROUTES ====================
 
