@@ -243,10 +243,10 @@ async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
             safe_spots = []
             for i, spot in enumerate(results):
                 try:
-                    # 🕒 Check if Google has live opening hours data for this spot
+                    # 🕒 Check live opening status from Google parameters
                     is_open = spot.get("opening_hours", {}).get("open_now", True)
                     
-                    # If it's explicitly closed right now, skip it entirely!
+                    # If closed right now, drop it immediately to prevent locked door hazards
                     if not is_open:
                         continue
                         
@@ -257,7 +257,13 @@ async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
                 except (IndexError, KeyError):
                     name = spot.get('name')
                     safe_spots.append(f"{name} (nearby)")
+                
+            return safe_spots
+        except Exception as e:
+            logging.error(f"Maps API Failure: {e}")
+            return []
 
+# 🌟 OUTSIDE AND INDEPENDENT OF THE MAPS TRY/EXCEPT BLOCK 🌟
 async def get_local_crime_data(lat: float, lng: float):
     """Fetches real-time localized crime markers from the official UK Police API."""
     police_url = "https://data.police.uk/api/crimes-at-location"
