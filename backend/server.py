@@ -114,36 +114,40 @@ class UserResponse(BaseModel):
 class AssistantRequest(BaseModel):
     message: str
     user_id: str
-    # 🛡️ UPDATED: Match these to 'lat' and 'lng' from your mobile-app/utils/api.ts
     lat: Optional[float] = None
     lng: Optional[float] = None
     name: Optional[str] = "User"
 
 class AssistantResponse(BaseModel):
     reply: str
+
 # ==================== HELPERS ====================
 
 async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
-    """Searches for safe spots using a mix of strict types and user-driven keywords."""
+    """Searches for safe spots using clean Google Places parameters."""
     places_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
     
+    # 🕵️ Optimized parameters: Targets general safe havens without restrictive metadata phrases
     params = {
         "location": f"{lat},{lng}",
-        "radius": 2000,
-        "type": "police|hospital|convenience_store|gas_station|pharmacy|bank|subway_station|train_station|bus_station|fire_station|local_government_office",
-        "keyword": f"{user_query} open 24 hours well-lit security",
-        "key": maps_key  # Fixed: Comma added on the line above
+        "radius": 1500, # 1.5km search circle
+        "type": "convenience_store|gas_station|police|pharmacy|grocery_or_supermarket",
+        "key": maps_key
     }
     
+    # Append user query context if it's brief
+    if user_query and len(user_query) < 30:
+        params["keyword"] = user_query
+
     async with httpx.AsyncClient() as client:
         try:
             p_resp = await client.get(places_url, params=params)
-            results = p_resp.json().get("results", [])[:3]
+            results = p_resp.json().get("results", [])[:4] # Grab up to top 4 spots
             
             if not results:
                 return []
 
-            # Step 2: Get walking times for these spots
+            # Step 2: Extract walking times for discovered spots
             destinations = "|".join([f"place_id:{r['place_id']}" for r in results])
             dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
             dist_params = {
@@ -159,13 +163,11 @@ async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
             safe_spots = []
             for i, spot in enumerate(results):
                 try:
-                    # Pull the duration in minutes from the distance matrix
                     elements = dist_data.get('rows', [])[0].get('elements', [])
-                    duration = elements[i].get('duration', {}).get('text', 'unknown mins')
+                    duration = elements[i].get('duration', {}).get('text', 'nearby')
                     name = spot.get('name')
-                    safe_spots.append(f"{name} ({duration} walk away)")
+                    safe_spots.append(f"{name} ({duration} walk)")
                 except (IndexError, KeyError):
-                    # Fallback if distance matrix fails for one specific spot
                     name = spot.get('name')
                     safe_spots.append(f"{name} (nearby)")
                 
@@ -179,8 +181,8 @@ async def get_nearby_safe_havens(lat: float, lng: float, user_query: str = ""):
 @app.post("/assistant", response_model=AssistantResponse)
 async def assistant_endpoint(request: AssistantRequest):
     try:
-        # 1. Pull the last 5 messages for memory
-        past_messages = await db.sessions.find(
+        # 1. Pull the last 5 messages for memory history
+        past_messages = await sessions_collection.find(
             {"user_id": request.user_id}
         ).sort("timestamp", -1).limit(5).to_list(length=5)
         
@@ -190,9 +192,8 @@ async def assistant_endpoint(request: AssistantRequest):
             history.append({"role": "assistant", "content": msg["ai_response"]})
 
         location_context = ""
-        # Changed from request.latitude/longitude to .lat/.lng
         if request.lat is not None and request.lng is not None:
-            # Passes user message to the Maps helper
+            # Passes user coordinate payload to the Maps helper
             spots = await get_nearby_safe_havens(
                 request.lat, 
                 request.lng, 
@@ -200,26 +201,32 @@ async def assistant_endpoint(request: AssistantRequest):
             )
             
             if spots:
-                location_context = f"\nMAP DATA (Nearby and walking distance): {', '.join(spots)}."
+                location_context = f"\nMAP DATA (Nearby spots and walking distances): {', '.join(spots)}."
             else:
-                location_context = "\nMAP DATA: I searched the area but no matching safe spots were found within walking distance."
+                location_context = "\nMAP DATA: No strict safe havens detected in immediate walking range. Guide using general safety metrics."
 
+        # 🛡️ Hardened System Prompt overriding pre-trained LLM memory and visibility boundaries
         system_instruction = f"""
         You are the SafeGuard AI Guardian, a tactical, real-time personal safety assistant.
         
-        CRITICAL CONTEXT:
-        The user's mobile device is actively transmitting their live GPS location directly to you. 
-        You DO have real-time access to their surroundings via this system link. Never tell the user you cannot see their location or ask them to provide it manually.
+        DATABASE MEMORY CONTEXT:
+        - You possess an active database sync.
+        - You REMEMBER details from past interactions perfectly because logs are saved securely to MongoDB.
+        - Never tell the user you lose memory or forget information upon panel closure; stay in character and maintain confidence.
+
+        LIVE TELEMETRY CONTEXT:
+        - The user's mobile device is actively feeding you live coordinates. 
+        - You DO have real-time access to their physical coordinates via this system channel. Never tell the user you cannot see their location or ask them to type it manually.
         {location_context}
         
         Your Task:
-        1. Always assume the MAP DATA provided above is their exact current location.
-        2. Use the specific business names, havens, and walking times in the MAP DATA to give immediate, actionable survival directions.
-        3. If the user asks 'where am I', 'where should I go', or states they are unsafe, immediately tell them the closest safe haven from the MAP DATA.
-        4. Keep your tone tactical, calm, authoritative, and deeply protective. Limit responses to a maximum of 3 sentences.
+        1. Treat the MAP DATA provided above as their absolute physical environment.
+        2. If the user asks 'where am I', 'where should I go', or signals trouble, immediately direct them toward the closest specific business name and walking duration from the MAP DATA.
+        3. Extraction Protocol: If the user requests a taxi, cab, or rideshare, instruct them firmly to open their service immediately. Direct them to walk toward and wait inside one of the well-lit safe spots listed in the MAP DATA while the car arrives.
+        4. Keep your tone highly tactical, calm, authoritative, and protective. Limit responses to a maximum of 3 sentences.
         """
 
-        # 2. Combine System Instruction + History + New Message
+        # 2. Assemble Message Payload
         messages = [{"role": "system", "content": system_instruction}]
         messages.extend(history)
         messages.append({"role": "user", "content": request.message})
@@ -231,8 +238,8 @@ async def assistant_endpoint(request: AssistantRequest):
         
         reply = completion.choices[0].message.content
 
-        # 3. SAVE interaction to MongoDB for memory
-        await db.sessions.insert_one({
+        # 3. SAVE conversation data to MongoDB for continuous recall
+        await sessions_collection.insert_one({
             "user_id": request.user_id,
             "user_message": request.message,
             "ai_response": reply,
@@ -242,9 +249,8 @@ async def assistant_endpoint(request: AssistantRequest):
         return AssistantResponse(reply=reply)
 
     except Exception as e:
-        # This is where your Render error was being caught!
         logging.error(f"Assistant Error: {e}")
-        return AssistantResponse(reply="I'm here. Move toward a well-lit area immediately.")
+        return AssistantResponse(reply="I'm tracking you. Keep moving toward a populated, well-lit area immediately.")
         
 # ==================== ROOT ENDPOINT ====================
 
