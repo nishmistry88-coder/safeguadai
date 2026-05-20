@@ -795,13 +795,33 @@ async def emergency_dispatch(alert: IncapacitationAlert):
 # ==================== EMERGENCY TAB LINK ALIAS ====================
 
 @app.post("/location/emergency")
-async def location_emergency_alias(alert: IncapacitationAlert):
+async def location_emergency_alias(payload: dict):
     """
-    Alias endpoint map to handle the legacy network requests coming 
-    from the dedicated main navigation Emergency Screen tab interface.
+    Interceptions translation gateway to process flexible payloads 
+    originating from the dedicated emergency tab screen panel.
     """
-    logging.info("⚡ Legacy /location/emergency route intercepted. Redirecting payload to dispatch core...")
-    return await emergency_dispatch(alert)
+    logging.info(f"⚡ Emergency tab ping intercepted. Raw payload incoming: {payload}")
+    
+    # 🔄 Extraction translation engine (normalizes variations in naming structures)
+    user_id = payload.get("user_id") or payload.get("userId") or "guest_user"
+    lat = payload.get("lat") or payload.get("latitude")
+    lng = payload.get("lng") or payload.get("longitude")
+
+    # Guardrail check: Ensure valid floating data types resolved before execution
+    if lat is None or lng is None:
+        logging.error("Failed to parse coordinates from emergency tab payload.")
+        raise HTTPException(status_code=400, detail="Missing coordinate tracking markers.")
+
+    # Reconstruct the normalized data object expected by the core routing gateway
+    alert_data = IncapacitationAlert(
+        user_id=str(user_id),
+        lat=float(lat),
+        lng=float(lng),
+        status="emergency_page_trigger"
+    )
+    
+    # Run the core automated dispatch sequence directly
+    return await emergency_dispatch(alert_data)
 
 # ==================== SETTINGS ROUTES ====================
 
