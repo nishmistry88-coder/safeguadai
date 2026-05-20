@@ -792,6 +792,17 @@ async def emergency_dispatch(alert: IncapacitationAlert):
         logging.error(f"Failed to deploy emergency automated call payload: {e}")
         raise HTTPException(status_code=500, detail="Failed to initiate outbound emergency communication.")
 
+# ==================== EMERGENCY TAB LINK ALIAS ====================
+
+@app.post("/location/emergency")
+async def location_emergency_alias(alert: IncapacitationAlert):
+    """
+    Alias endpoint map to handle the legacy network requests coming 
+    from the dedicated main navigation Emergency Screen tab interface.
+    """
+    logging.info("⚡ Legacy /location/emergency route intercepted. Redirecting payload to dispatch core...")
+    return await emergency_dispatch(alert)
+
 # ==================== SETTINGS ROUTES ====================
 
 @app.get("/settings")
